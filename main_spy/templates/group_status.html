@@ -1,0 +1,180 @@
+<!doctype html>
+<html>
+<head>
+<title>Group {{ group_id }} users stats</title>
+<style>
+@font-face {
+	font-family: 'Segoe UI';
+	src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
+}
+
+div.header {
+	font-family: 'Segoe UI';
+	font-size: 24px;
+	padding-bottom: 20px;
+}
+
+span.emphasize {
+	color: #ff6600
+}
+
+.RGraph_tooltip {
+	font-family: 'Segoe UI' ! important;
+}
+</style>
+<script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
+<script>
+var chart1; // globally available
+$(document).ready(function() {
+	
+	series_opts = [
+		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
+		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
+		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
+	]
+	
+	function make_request(t1, t2, stat_id, index) {
+		$.ajax ({
+			url: '/series/group{{ group_id }}/' + stat_id + '/' + t1 + '/' + t2 + '/',
+			success: function (data) {
+				update = data.response.series
+				current_series = chart1.series[index].data
+				
+				var cur_update_index = 0
+				var cur_series_index = 0
+				var update_len = update.length
+				var series_len = current_series.length
+				var points_to_add = []
+				while (cur_update_index < update_len) {
+					if (cur_series_index >= series_len) {
+						for (var i = cur_update_index; i < update_len; i++)
+							points_to_add.push (update[i])
+						break
+					}
+					var date_update = update[cur_update_index][0]
+					var date_series = current_series[cur_series_index][0]
+					if (date_update > date_series) {
+						cur_series_index++
+					} else if (date_update < date_series) {
+						points_to_add.push (update[cur_update_index])
+						cur_update_index++
+					} else {
+						cur_series_index++
+						cur_update_index++
+					}
+				}
+				
+				for (var i = 0, l = points_to_add.length; i < l; i++) {
+					chart1.series[index].addPoint (points_to_add[i])
+				}
+			}
+		});
+	}
+	
+	function refresh_chart(t1, t2) {
+		for (var i = 0, l = series_opts.length; i < l; i++)
+			make_request(t1, t2, series_opts[i].stat_id, series_opts[i].index)
+	}
+	
+	date_now = Math.round (new Date().getTime() / 1000)
+	back_for_year = date_now - 365 * 24 * 60 * 60
+	console.log (date_now, back_for_year)
+		
+	chart1 = new Highcharts.Chart({
+		chart: {
+			renderTo: 'chart',
+			type: 'line',
+			width: 800,
+			zoomType: 'x',
+			events: {
+				selection: function(event) {
+					if (event.xAxis) {
+						refresh_chart (Math.round (event.xAxis[0].min / 1000), Math.round (event.xAxis[0].max / 1000))
+					} else {
+						refresh_chart (back_for_year, date_now)
+					}
+				}
+			},
+		},
+		title: {
+			text: 'General users stats for group {{ group_id }}'
+		},
+		xAxis: {
+			type: 'datetime',
+			min: back_for_year * 1000,
+			showLastLabel: true,
+			maxPadding: 0.02
+		},
+		yAxis: {
+			title: {
+				text: 'Count'
+			},
+			min: 0
+		}
+	});
+	
+	for (var i = 0, l = series_opts.length; i < l; i++)
+		chart1.addSeries ({
+			type: 'line',
+			name: series_opts[i].label,
+			color: series_opts[i].color,
+			data: [],
+			lineWidth: 1
+		})
+	
+	refresh_chart(back_for_year, date_now)
+
+});
+</script>
+</head>
+<body>
+<div id="chart" width="800" height="400"></div>
+<script>
+/*total_users = []
+banned_users = []
+faceless_users = []
+labels = []
+{% for v in values.total_users %}
+	total_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
+{% endfor %}
+{% for v in values.banned_users %}
+	banned_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
+{% endfor %}
+{% for v in values.faceless_users %}
+	faceless_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
+{% endfor %}
+
+window.onload = function () {
+    line = new RGraph.Scatter("myCanvasTag", [total_users, banned_users, faceless_users]);
+	line.Set('chart.line', true);
+	line.Set('chart.xmin', total_users[0][0]);
+    line.Set('chart.xmax', total_users[total_users.length - 1][0]);
+	line.Set('chart.line.colors', ['blue', 'red', 'orange']);
+	line.Set("chart.text.font", "Myriad Pro")
+	line.Set("chart.gutter.left", 60)
+	line.Set("chart.gutter.top", 40)
+	line.Set("chart.gutter.right", 160)
+	line.Set("chart.key", ["Total users", "Banned users", "Faceless users"])
+	line.Set('chart.key.position', 'gutter');
+	line.Set('chart.tickmarks', null);
+	line.Set('chart.tooltips.effect', 'snap');
+	line.Set("chart.labels", [[total_users[0][2], total_users[0][0]], [total_users[total_users.length - 1][2], total_users[total_users.length - 1][0]]])
+	//line.Set('chart.labels.specific.align', 'center');
+    line.Draw();
+	
+	
+	
+	//line2 = new RGraph.Line("myCanvasTag", [10, 20, 30 , 40, 50, 60, 70, 80, 90, 85, 80, 50])
+	//line2.Set ('chart.colors', ['blue'])
+	//line2.Draw ()
+}
+*/
+/*element = document.createElement ("div")
+element.innerHTML = "<div style='margin-top: 15px; margin-left: 60px; font-family: \"Segoe UI\"'>Total users: " + total_users[total_users.length - 1][1] + "</div>"
+					+ "<div style='margin-left: 60px; font-family: \"Segoe UI\"'>Banned users: " + banned_users[total_users.length - 1][1] + " (" + (100 * banned_users[banned_users.length - 1][1] / total_users[total_users.length - 1][1]).toPrecision(2) + "%)</div>"
+					+ "<div style='margin-left: 60px; font-family: \"Segoe UI\"'>Faceless users: " + faceless_users[total_users.length - 1][1] + " (" + (100 * faceless_users[banned_users.length - 1][1] / total_users[total_users.length - 1][1]).toPrecision(2) + "%)</div>"
+document.body.appendChild (element)*/
+</script>
+</body>
+</html>

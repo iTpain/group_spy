@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+<title>Group {{ group_id }} users stats</title>
+<style>
+@font-face {
+	font-family: 'Segoe UI';
+	src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
+}
+
+div.header {
+	font-family: 'Segoe UI';
+	font-size: 24px;
+	padding-bottom: 20px;
+	color: #ff6600
+}
+
+span.emphasize {
+	color: #ff6600;
+}
+
+div.emphasize {
+	color: #ff6600;
+}
+
+div.group {
+	font-family: 'Segoe UI';
+	font-size: 20px;
+	margin-bottom: 10px;
+}
+
+div.group_alias:hover {
+	color: #ff6600;
+	cursor: pointer;
+}
+
+div.column {
+	float: left;
+	margin-right: 60px;
+}
+
+a.group_href {
+	font-size: 14px;
+	color: grey;
+	margin: 0;
+	padding: 0;
+}
+
+div.group_href {
+	margin-top: -8px;
+}
+
+div.group_last_scanned {
+	font-size: 14px;
+	color: grey;	
+}
+
+div.group_asking_to_click {
+	font-family: "Segoe UI";
+	font-size: 20px;
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+.underline {
+	text-decoration: underline;
+}
+
+</style>
+<script src="{{ STATIC_URL }}js/jquery.js"></script>
+</head>
+<body>
+<div>
+	<div class="column" id="group_list_column">
+		<div class="header">
+		Groups currently monitored
+		</div>
+		{% for g in groups %}
+		<div class="group">
+			<div class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</div>
+			<div class="group_last_scanned">refreshed at {{ g.last_scanned }}</div>
+			<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
+		</div>
+		{% endfor %}
+		<div class="group" id="addgroup_div">
+			<span class="emphasize pointer" onclick="addGroup ()">Add</span> group <input id="added_group_id" type="text" style="width: 70px"> 
+		</div>
+	</div>
+	<div class="column">
+		<div class="header">
+			Group users' statistics
+		</div>
+		<div class="group_asking_to_click">Please choose a group from the list</div>
+		<iframe frameborder="no" id="graphFrame" width="820" height="600"></iframe>
+	</div>
+</div>
+
+<script type="text/javascript">
+	var curSelected = null
+	
+	function showGroup (gid, obj) {
+		document.getElementById ("graphFrame").src = "group" + gid
+		$("div.group_asking_to_click")[0].style.display = "none"
+		$("#group_alias_" + gid)[0].style.color = "#ff6600"
+		if (curSelected != null) 
+			$(curSelected)[0].style.color = ""
+		curSelected = $("#group_alias_" + gid)[0]
+	}
+	
+	function addGroup () {
+		gid = $("#added_group_id")[0].value
+		if (gid.length == 0)
+			return;
+		$.ajax ({
+			'url': '/group/add/' + gid,
+			'error': function (err) { alert (err.errors) },
+			'success': function (res) {
+				if (res.errors.length > 0) {
+					alert (res.errors)
+				} else {
+					res = res.response
+					var div = $('<div class="group">' +
+								'<div class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</div>' +
+								'<div class="group_last_scanned">not scanned yet</div>' +
+								'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
+								'</div>')[0]
+					$("#group_list_column")[0].insertBefore (div, $("#addgroup_div")[0]);
+				}
+			},
+		});
+	}
+</script>
+</body>
+</html>
