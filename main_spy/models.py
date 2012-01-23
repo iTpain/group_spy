@@ -3,6 +3,8 @@ from django.db import models
 class Group(models.Model):
     gid = models.CharField(max_length=256)
     last_scanned = models.DateTimeField(auto_now=True, auto_now_add=True)
+    agency = models.TextField()
+    brand = models.TextField()
     alias = models.CharField(max_length=1024)
 
 class Post(models.Model):

@@ -20,7 +20,6 @@ class PostsScanner(object):
         print "Posts scan completed"
         
     def find_new_posts(self, crawler, gid):
-        #time.mktime((datetime.now() - timedelta(days=5)).timetuple())
         for p in crawler.get_posts_from_group("-" + str(gid)):
             try:
                 Post.objects.get(pid=p['id'])
@@ -28,7 +27,7 @@ class PostsScanner(object):
             except Post.DoesNotExist:
                 now = iso_date_from_ts(time.time())
                 post_date = iso_date_from_ts(p['date'])
-                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=now, last_comment_date=now, group_id=gid)
+                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=datetime.now(), last_comment_date=datetime.now(), group_id=gid)
                 print "Post " + str(p['id']) + " added, date published: " + post_date
                 new_post.save()
                 self.create_attachments_for_post (p, new_post)
@@ -60,8 +59,9 @@ class PostsScanner(object):
         print "Updating post " + str(post.pid)
         post.last_scanned = now
         min_time_comment = 10000000000
-        max_time_comment = 0
+        max_time_comment = time.mktime(post.date.timetuple())
         for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id)):
+            print "comment found, date: " + str(datetime.fromtimestamp(c['date']))
             if c['date'] > max_time_comment:
                 max_time_comment = c['date']
             if c['date'] < min_time_comment:

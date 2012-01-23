@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group
+from group_spy.main_spy.models import GroupObservation, Group, Post, PostObservation
 from time import gmtime, strftime
 from group_spy.logger.error import LogError
 from datetime import datetime
@@ -14,8 +14,9 @@ class GroupScanner(object):
         for g in groups:
             try:
                 print "Scanning group " + g.gid
-                result = self.scan_group(crawler, g.gid)
-                self.write_observations(g, result)
+                users_result = self.scan_group_users(crawler, g.gid)
+                activity_result = self.compute_group_activity(g.gid)
+                self.write_observations(g, dict(users_result.items() + activity_result.items()))
                 g.last_scanned = datetime.now()
                 print "Group " + g.gid + " successfully scanned"
             except Exception as e:
@@ -32,7 +33,7 @@ class GroupScanner(object):
         except Exception as e:
             LogError(e, "Failed to get groups info")
     
-    def scan_group(self, crawler, gid):
+    def scan_group_users(self, crawler, gid):
         total_users = 0
         banned_users = 0
         faceless_users = 0    
@@ -44,6 +45,19 @@ class GroupScanner(object):
                 faceless_users += 1
             total_users += 1
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
+    
+    def compute_group_activity(self, group_id):
+        active_posts = list(Post.objects.filter(closed=False, group=group_id))
+        stats = {"likes": 0, "comments": 0, "reposts": 0}
+        response_stats = {"likes": "active_posts_likes", "comments": "active_posts_comments", "reposts": "active_posts_reposts"}
+        for post in active_posts:
+            for k, v in stats.iteritems():
+                stats[k] = v + PostObservation.objects.filter(post=post, statistics=k).latest("date").value
+        mapped_stats = {}
+        for k, v in stats.iteritems():
+            mapped_stats[response_stats[k]] = v
+        mapped_stats["active_posts_count"] = len(active_posts)  
+        return mapped_stats
     
     def write_observations(self, group, result):
         now = strftime("%Y-%m-%d %H:%M:%S", gmtime())

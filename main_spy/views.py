@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group
+from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment
 from group_spy.utils.misc import get_vk_crawler, get_credentials
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -110,30 +110,45 @@ def get_extraction_method_for_interval(interval, quanta):
         return wholesale_extract
     
 
-def get_series_from(objects, quanta, time_start, time_end, interval):
+def get_series_from(objects, time_start, time_end):
+    interval = time_end - time_start
+    quanta = choose_quanta(interval)
     method = get_extraction_method_for_interval(interval, quanta)
     return method(objects, quanta, time_start, time_end)
     
 @json_response
 def get_series_group_wide (request, group_id, stat_id, time_start, time_end):
-    time_start = datetime.fromtimestamp(int(time_start))
-    time_end = datetime.fromtimestamp(int(time_end))
-    time_interval_len = time_end - time_start
-    quanta = choose_quanta(time_interval_len)
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
-    series = get_series_from(all_objects, quanta, time_start, time_end, time_interval_len)
-    return {'series': series, 'quanta': str(quanta)}
+    series = get_series_from(all_objects, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
+    return {'series': series}
 
 @json_response
-def get_series_for_posts (request, group_id, stat_id, filters_str, time_start, time_end, aggregation_method):
+def get_series_for_posts (request, group_id, stat_id, content_types, time_start, time_end):
+    all_posts = Post.objects.filter(group=group_id, closed=False)
+    if len(content_types) > 0:
+        content_types = content_types.split(",")
+        attachments = PostAttachment.objects.filter(post__in=[post.id for post in all_posts]).filter(attachment_type__in=content_types)
+        posts_ids = {attachment.post_id: True for attachment in attachments}.values()
+        print posts_ids
+        raise 'x'
+    return get_series_from(all_posts, time_start, time_end)
+
+@json_response
+def get_group_current_stats(request, group_id):
+    stats = ["total_users", "faceless_users", "banned_users", "active_posts_count", "active_posts_likes", "active_posts_comments", "active_posts_reposts"]
+    stats_data = {s: GroupObservation.objects.filter(statistics=s, group=group_id).latest("date").value for s in stats}
+    return stats_data
+
+@json_response
+def update_group_info(request, group_id):
+    group = Group.objects.get(gid=group_id)
+    group.agency = request.POST['agency']
+    group.brand = request.POST['brand']
+    group.save()
     return {}
        
 def group_status(request, gid):
-    observations = GroupObservation.objects.filter(group__id=gid)
-    values = {'total_users': [], 'faceless_users': [], 'banned_users': []}
-    for obs in observations:
-        values[obs.statistics].append ({'value': obs.value, 'raw_time': obs.date, 'time': str (obs.date.year) + "," + str(obs.date.month - 1) + "," + str(obs.date.day) + "," + str(obs.date.hour) + "," + str(obs.date.minute)})
-    return render_to_response ('group_status.html', {'values': values, 'group_id': gid}, context_instance=RequestContext(request))
+    return render_to_response ('group_status.html', {'group_id': gid}, context_instance=RequestContext(request))
 
 def groups_main(request):
     groups = Group.objects.all ()

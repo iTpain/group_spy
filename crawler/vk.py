@@ -91,7 +91,7 @@ class VKCrawler(object):
                 
     def get_posts_from_group(self, gid, from_time = 0):
         params = {'method': 'wall.get', 'owner_id': gid}
-        for post in self.generic_countable_objects_generator(params, lambda r: r[1:], lambda post: post['date'] > from_time):
+        for post in self.generic_countable_objects_generator(params, lambda r: r[1:], lambda post: post['date'] >= from_time):
             yield post
             
     #def get_posts_by_id(self, ids):
@@ -144,7 +144,7 @@ class VKCrawler(object):
             responses = [fetch_array_func(j.response) for j in jobs]
             finished_flag = False
             for r in responses:
-                if not isinstance(r, list) or len(r) <= 1:
+                if not isinstance(r, list) or len(r) == 0:
                     finished_flag = True
                 else:
                     for post in r:

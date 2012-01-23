@@ -18,9 +18,35 @@ span.emphasize {
 	color: #ff6600
 }
 
-.RGraph_tooltip {
-	font-family: 'Segoe UI' ! important;
+#group_stats_snapshot {
+	margin-left: 6px;
+	font-family: 'Segoe UI';
+	width: 800px;
+	font-size:14px;
 }
+
+div.snapshot-cell {
+	float: left;
+	margin: 3px 10px 10px 3px;
+}
+
+span.snapshot-cell-value {
+	font-size: 18px;
+}
+
+#group_stats_snapshot_header {
+	font-family: "Segoe UI";
+	font-size: 20px;
+	margin-left:10px;
+	margin-bottom: 15px;
+	margin-top:-9px;
+}
+
+span.snapshot-cell-additional-info {
+	font-size: 12px;
+	color: grey;
+}
+
 </style>
 <script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
@@ -28,18 +54,66 @@ span.emphasize {
 var chart1; // globally available
 $(document).ready(function() {
 	
-	series_opts = [
-		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
-		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
-		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
-	]
+	var snapshot_decoration = {
+		"banned_users": {
+			title: "Banned users",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.banned_users / data.total_users).toPrecision(2)) + "%)</span>"}
+		},
+		"faceless_users": {
+			title: "Faceless users",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100  *data.faceless_users / data.total_users).toPrecision(2)) + "%)</span>"}
+		},
+		"total_users": {
+			title: "Total users"
+		},
+		"active_posts_count": {
+			title: "Active posts count"
+		},
+		"active_posts_likes": {
+			title: "Total likes (a.p.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_likes / data.active_posts_count)) + " avg)</span>"}
+		},
+		"active_posts_reposts": {
+			title: "Total reposts (a.p.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_reposts / data.active_posts_count)) + " avg)</span>"}
+		},
+		"active_posts_comments": {
+			title: "Total comments (a.p.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_comments / data.active_posts_count)) + " avg)</span>"}
+		},			
+	};
+	$.ajax ({		
+		url: '/group{{ group_id }}/snapshot/',
+		success: function(data) {
+			data = data.response
+			div = $("#group_stats_snapshot")[0]
+			var order = ["total_users", "faceless_users", "banned_users", "BREAK", "active_posts_count", "active_posts_likes", "active_posts_reposts", "active_posts_comments"]
+			current_div = $("<div style='clear:both'></div>")[0]
+			div.appendChild (current_div)
+			for (var i = 0, l = order.length; i < l; i++) {
+				var key = order[i]
+				if (key == "BREAK") {
+					current_div = $("<div style='clear:both'></div>")[0]
+					div.appendChild (current_div)
+				} else {
+					cell = $("<div class='snapshot-cell'></div>")[0]
+					var dec = snapshot_decoration[key] 
+					cell.innerHTML = dec.title + ": <span class='snapshot-cell-value'>" + data[key] + "</span>"
+					if (dec.addition) {
+						cell.innerHTML += dec.addition(data)
+					}
+					current_div.appendChild(cell)
+				}			
+			}
+		}
+	});
 	
-	function make_request(t1, t2, stat_id, index) {
+	function make_request(t1, t2, stat_id, index, chart) {
 		$.ajax ({
 			url: '/series/group{{ group_id }}/' + stat_id + '/' + t1 + '/' + t2 + '/',
 			success: function (data) {
 				update = data.response.series
-				current_series = chart1.series[index].data
+				current_series = chart.series[index].data
 				
 				var cur_update_index = 0
 				var cur_series_index = 0
@@ -66,70 +140,105 @@ $(document).ready(function() {
 				}
 				
 				for (var i = 0, l = points_to_add.length; i < l; i++) {
-					chart1.series[index].addPoint (points_to_add[i])
+					chart.series[index].addPoint (points_to_add[i])
 				}
+				
+				chart.setSize(800, 400)
 			}
 		});
 	}
 	
-	function refresh_chart(t1, t2) {
-		for (var i = 0, l = series_opts.length; i < l; i++)
-			make_request(t1, t2, series_opts[i].stat_id, series_opts[i].index)
+	function refresh_chart(chart_desc, t1, t2) {
+		for (var i = 0, l = chart_desc.series_opts.length; i < l; i++)
+			make_request(t1, t2, chart_desc.series_opts[i].stat_id, chart_desc.series_opts[i].index, chart_desc.chart)
 	}
 	
+	series_opts_group_users_chart = [
+		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
+		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
+		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
+	]
+	
+	series_opts_group_activity_chart = [
+		{ color: '#00ff00', label: "Active posts count", stat_id: "active_posts_count", index: 0},
+		{ color: '#ff0000', label: "Total likes (active posts)", stat_id: "active_posts_likes", index: 1 },
+		{ color: '#ff6600', label: "Total comments (active posts)", stat_id: "active_posts_comments", index: 2},
+		{ color: '#0000ff', label: "Total reposts (active posts)", stat_id: "active_posts_reposts", index: 3}
+	]
+	
 	date_now = Math.round (new Date().getTime() / 1000)
-	back_for_year = date_now - 365 * 24 * 60 * 60
-	console.log (date_now, back_for_year)
-		
-	chart1 = new Highcharts.Chart({
-		chart: {
-			renderTo: 'chart',
-			type: 'line',
-			width: 800,
-			zoomType: 'x',
-			events: {
-				selection: function(event) {
-					if (event.xAxis) {
-						refresh_chart (Math.round (event.xAxis[0].min / 1000), Math.round (event.xAxis[0].max / 1000))
-					} else {
-						refresh_chart (back_for_year, date_now)
-					}
-				}
-			},
-		},
-		title: {
-			text: 'General users stats for group {{ group_id }}'
-		},
-		xAxis: {
-			type: 'datetime',
-			min: back_for_year * 1000,
-			showLastLabel: true,
-			maxPadding: 0.02
-		},
-		yAxis: {
-			title: {
-				text: 'Count'
-			},
-			min: 0
-		}
-	});
-	
-	for (var i = 0, l = series_opts.length; i < l; i++)
-		chart1.addSeries ({
-			type: 'line',
-			name: series_opts[i].label,
-			color: series_opts[i].color,
-			data: [],
-			lineWidth: 1
-		})
-	
-	refresh_chart(back_for_year, date_now)
+	back_for_month = date_now - 90 * 24 * 60 * 60
 
+	group_charts = [
+		{ title: 'General users stats', series_opts: series_opts_group_users_chart, container: "group_users_chart" },
+		{ title: 'General activity stats', series_opts: series_opts_group_activity_chart, container: "group_activity_chart" }
+	]
+	
+	for (var i = 0, l = group_charts.length; i < l; i++) {
+		var chart_description = group_charts[i]
+		var chart = new Highcharts.Chart({
+			chart: {
+				renderTo: chart_description.container,
+				type: 'line',
+				width: 800,
+				height: 500,
+				zoomType: 'x',
+				events: {
+					selection: (function (cd) { return function(event) {
+							if (event.xAxis) {
+								refresh_chart (cd, Math.round (event.xAxis[0].min / 1000), Math.round (event.xAxis[0].max / 1000))
+							}
+						}
+					}) (chart_description)
+				},
+			},
+			title: {
+				text: chart_description.title,
+				style: {
+					"font-family": "Segoe UI",
+					"color": "#000000",
+					"font-size": "20px",
+				},
+				align: "left",
+				x: 0,
+				margin: 50
+			},
+			xAxis: {
+				type: 'datetime',
+				min: back_for_month * 1000,
+				showLastLabel: true,
+				maxPadding: 0.02
+			},
+			yAxis: {
+				title: {
+					text: 'Count'
+				},
+				min: 0
+			}
+		});
+		var opts = chart_description.series_opts
+		for (var j = 0, ln = opts.length; j < ln; j++)
+			chart.addSeries ({
+				type: 'line',
+				name: opts[j].label,
+				color: opts[j].color,
+				data: [],
+				lineWidth: 1
+			})
+		chart_description.chart = chart
+	}
+
+	for (var i = 0, l = group_charts.length; i < l; i++) {
+		refresh_chart(group_charts[i], back_for_month, date_now)
+	}
 });
 </script>
 </head>
 <body>
-<div id="chart" width="800" height="400"></div>
+<div id="group_stats_snapshot_header">Stats snapshot</div>
+<div id="group_stats_snapshot"></div>
+<div id="group_users_chart" width="800" height="500" style="margin-bottom:20px; margin-top: 50px; clear: both"></div>
+<div id="group_activity_chart" width="800" height="500"></div>
 <script>
 /*total_users = []
 banned_users = []

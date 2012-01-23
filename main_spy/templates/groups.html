@@ -8,6 +8,11 @@
 	src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
 }
 
+body {
+	margin: 0px;
+	padding: 0px;
+}
+
 div.header {
 	font-family: 'Segoe UI';
 	font-size: 24px;
@@ -36,7 +41,9 @@ div.group_alias:hover {
 
 div.column {
 	float: left;
-	margin-right: 60px;
+	margin-right: 35px;
+	margin-top: 15px;
+	margin-left: 25px;
 }
 
 a.group_href {
@@ -50,7 +57,7 @@ div.group_href {
 	margin-top: -8px;
 }
 
-div.group_last_scanned {
+div.group_info {
 	font-size: 14px;
 	color: grey;	
 }
@@ -68,11 +75,59 @@ div.group_asking_to_click {
 	text-decoration: underline;
 }
 
+div.second-column-header {
+	margin-left: 17px;
+}
+
+div.group_info span {
+	cursor: pointer;
+}
+
+div.black_screen {
+	position: fixed;
+	width:100%;
+	height:10000px;
+	background: black;
+	display: none;
+	opacity: 0.7;
+}
+
+#group_info_updater {
+	width: 400px;
+	left: 50%;
+	margin-left: -200px;
+	height: 50px;
+	position: absolute;
+	top: 200px;
+	display: none;
+	background: white;
+}
+
+div.inline {
+	display: inline;
+}
+
 </style>
 <script src="{{ STATIC_URL }}js/jquery.js"></script>
 </head>
 <body>
 <div>
+	<div class="black_screen">
+		<div id="group_info_updater">
+			<div class="inline"></div>
+			<div class="inline">
+				<span>Agency:</span>
+				<input type="text" style="width: 80px" />
+			</div>
+			<div class="inline">
+				<span>Brand:</span>
+				<input type="text" style="width: 80px" />
+			</div>
+			<div class="inline">
+				Update
+			</div>
+		</div>
+	</div>
 	<div class="column" id="group_list_column">
 		<div class="header">
 		Groups currently monitored
@@ -80,7 +135,7 @@ div.group_asking_to_click {
 		{% for g in groups %}
 		<div class="group">
 			<div class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</div>
-			<div class="group_last_scanned">refreshed at {{ g.last_scanned }}</div>
+			<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])">{% if g.agency|length_is:0 %}Empty agency{% else %}{{g.agency}}{% endif %} - {% if g.brand|length_is:0 %}Empty brand{% else %}{{g.brand}}{% endif %}</span></div>
 			<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
 		</div>
 		{% endfor %}
@@ -89,16 +144,37 @@ div.group_asking_to_click {
 		</div>
 	</div>
 	<div class="column">
-		<div class="header">
-			Group users' statistics
+		<div class="header second-column-header">
+			Statistics
 		</div>
-		<div class="group_asking_to_click">Please choose a group from the list</div>
-		<iframe frameborder="no" id="graphFrame" width="820" height="600"></iframe>
+		<div class="group_asking_to_click second-column-header">Please choose a group from the list</div>
+		<iframe frameborder="no" id="graphFrame" width="820" height="1200"></iframe>
 	</div>
 </div>
 
 <script type="text/javascript">
 	var curSelected = null
+	
+	var groups_info = [
+		0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}" }{% endfor %}
+	]
+	groups_info.pop()
+	
+	opened_dialog = null
+	function show_dialog (dialog_id, params) {
+		close_current_dialog()
+		$("div.black_screen")[0].style.display = "block"
+		$("#" + dialog_id)[0].style.display = "block"
+		opened_dialog = $("#" + dialog_id)[0]
+	}
+	
+	function close_current_dialog() {
+		if (opened_dialog != null) {
+			$("div.black_screen")[0].style.display = "none"
+			opened_dialog.style.display = "none"
+			opened_dialog = null
+		}
+	}
 	
 	function showGroup (gid, obj) {
 		document.getElementById ("graphFrame").src = "group" + gid
