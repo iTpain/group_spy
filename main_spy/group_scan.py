@@ -3,6 +3,18 @@ from time import gmtime, strftime
 from group_spy.logger.error import LogError
 from datetime import datetime
 
+def compute_group_activity(active_posts):
+    stats = {"likes": 0, "comments": 0, "reposts": 0}
+    response_stats = {"likes": "active_posts_likes", "comments": "active_posts_comments", "reposts": "active_posts_reposts"}
+    for post in active_posts:
+        for k, v in stats.iteritems():
+            stats[k] = v + PostObservation.objects.filter(post=post, statistics=k).latest("date").value
+    mapped_stats = {}
+    for k, v in stats.iteritems():
+        mapped_stats[response_stats[k]] = v
+    mapped_stats["active_posts_count"] = len(active_posts)  
+    return mapped_stats
+
 class GroupScanner(object):
     
     BANNED_AVATARS = {"http://vkontakte.ru/images/deactivated_clo.png", "http://vkontakte.ru/images/deactivated_c.gif", "http://vk.com/images/deactivated_c.gif"}
@@ -15,7 +27,7 @@ class GroupScanner(object):
             try:
                 print "Scanning group " + g.gid
                 users_result = self.scan_group_users(crawler, g.gid)
-                activity_result = self.compute_group_activity(g.gid)
+                activity_result = compute_group_activity(list(Post.objects.filter(closed=False, group=g.gid)))
                 self.write_observations(g, dict(users_result.items() + activity_result.items()))
                 g.last_scanned = datetime.now()
                 print "Group " + g.gid + " successfully scanned"
@@ -23,7 +35,6 @@ class GroupScanner(object):
                 print e
                 LogError(e, "Failed to scan and save results for group " + g.gid)
         
-    
     def gather_groups_info(self, crawler, gids):
         try:
             for g in crawler.get_groups(gids):
@@ -46,19 +57,6 @@ class GroupScanner(object):
             total_users += 1
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
     
-    def compute_group_activity(self, group_id):
-        active_posts = list(Post.objects.filter(closed=False, group=group_id))
-        stats = {"likes": 0, "comments": 0, "reposts": 0}
-        response_stats = {"likes": "active_posts_likes", "comments": "active_posts_comments", "reposts": "active_posts_reposts"}
-        for post in active_posts:
-            for k, v in stats.iteritems():
-                stats[k] = v + PostObservation.objects.filter(post=post, statistics=k).latest("date").value
-        mapped_stats = {}
-        for k, v in stats.iteritems():
-            mapped_stats[response_stats[k]] = v
-        mapped_stats["active_posts_count"] = len(active_posts)  
-        return mapped_stats
-    
     def write_observations(self, group, result):
         now = strftime("%Y-%m-%d %H:%M:%S", gmtime())
         for (k, v) in result.iteritems():
@@ -66,6 +64,4 @@ class GroupScanner(object):
             print str(k) + ": " + str(v)
             obs.save ()
         group.last_scanned = now
-        group.save ()
-        
-        
+        group.save ()     

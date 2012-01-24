@@ -8,6 +8,10 @@
 	src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
 }
 
+body {
+	font-family: 'Segoe UI';
+}
+
 div.header {
 	font-family: 'Segoe UI';
 	font-size: 24px;
@@ -47,7 +51,12 @@ span.snapshot-cell-additional-info {
 	color: grey;
 }
 
+input.date-pick {
+	width: 80px;
+}
+
 </style>
+
 <script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
 <script>
@@ -57,29 +66,36 @@ $(document).ready(function() {
 	var snapshot_decoration = {
 		"banned_users": {
 			title: "Banned users",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.banned_users / data.total_users).toPrecision(2)) + "%)</span>"}
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.banned_users.latest / data.total_users.latest).toPrecision(2)) + "%)</span>"},
+			reverse_color_delta: true
 		},
 		"faceless_users": {
 			title: "Faceless users",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100  *data.faceless_users / data.total_users).toPrecision(2)) + "%)</span>"}
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.faceless_users.latest / data.total_users.latest).toPrecision(2)) + "%)</span>"},
+			reverse_color_delta: true
 		},
 		"total_users": {
-			title: "Total users"
+			title: "Total users",
+			reverse_color_delta: false
 		},
 		"active_posts_count": {
-			title: "Active posts count"
+			title: "Active posts count",
+			reverse_color_delta: false
 		},
 		"active_posts_likes": {
 			title: "Total likes (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_likes / data.active_posts_count)) + " avg)</span>"}
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_likes.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			reverse_color_delta: false
 		},
 		"active_posts_reposts": {
 			title: "Total reposts (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_reposts / data.active_posts_count)) + " avg)</span>"}
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_reposts.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			reverse_color_delta: false
 		},
 		"active_posts_comments": {
 			title: "Total comments (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_comments / data.active_posts_count)) + " avg)</span>"}
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_comments.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			reverse_color_delta: false
 		},			
 	};
 	$.ajax ({		
@@ -98,7 +114,35 @@ $(document).ready(function() {
 				} else {
 					cell = $("<div class='snapshot-cell'></div>")[0]
 					var dec = snapshot_decoration[key] 
-					cell.innerHTML = dec.title + ": <span class='snapshot-cell-value'>" + data[key] + "</span>"
+					
+					var c1 = dec.reverse_color_delta ? "#ff0000": "#55aa55"
+					var c2 = dec.reverse_color_delta ? "#55aa55" : "#ff0000" 
+					if (data[key].week_ago != "undefined") {
+						var color = data[key].latest >= data[key].week_ago ? c1 : c2
+					} else if (data[key].day_ago != "undefined") {
+						color = data[key].latest >= data[key].day_ago ? c1 : c2
+					} else {
+						color = '#000000'
+					}
+					
+					var title = ''
+					function create_title_part(label, now, prev) {
+						if (prev == "undefined") {
+							percentage = "no data"
+						} else {
+							var p = 100 * (now - prev) / prev
+							if (p > 0)
+								var percentage = "+" + p.toPrecision(4) + "%"
+							else 
+								percentage = p.toPrecision(4) + "%"
+						}
+						return label + ": " + percentage + "  "
+					}
+					title += create_title_part("Day ago", data[key].latest, data[key].day_ago)
+					title += create_title_part("Week ago", data[key].latest, data[key].week_ago)
+					title += create_title_part("Month ago", data[key].latest, data[key].month_ago)
+					
+					cell.innerHTML = dec.title + ": <span title='" + title + "' class='snapshot-cell-value' style='color:" + color + "'>" + data[key].latest + "</span>"
 					if (dec.addition) {
 						cell.innerHTML += dec.addition(data)
 					}
@@ -231,6 +275,118 @@ $(document).ready(function() {
 	for (var i = 0, l = group_charts.length; i < l; i++) {
 		refresh_chart(group_charts[i], back_for_month, date_now)
 	}
+	
+	/* stratification charts */
+	strata_charts = [
+		{
+			container: 'social_activity_hourly_stratified',
+			title: 'Social activity by hours',
+			strata_type: 'intraday_stratify',
+			strata_labels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+			key_func: function (key) { return parseInt(key) }
+		},
+		{
+			container: 'social_activity_daily_stratified',
+			title: 'Social activity by days of week',
+			strata_type: 'intraweek_stratify',
+			strata_labels: [0, 1, 2, 3, 4, 5, 6],
+			key_func: function (key) { return parseInt(key) }
+		},
+		{
+			container: 'social_activity_content_stratified',
+			title: 'Social activity by content type',
+			strata_type: 'content_stratify',
+			strata_labels: ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video'],
+			key_func: function (key) { return key }
+		}		
+	]
+	
+	for (var i = 0, l = strata_charts.length; i < l; i++) {
+		var params = strata_charts[i]
+		var schart = new Highcharts.Chart({
+			chart: {
+				renderTo: params.container,
+				defaultSeriesType: 'column',
+				width: 800,
+				height: 600
+			},
+			tooltip: {
+				formatter: function() {
+					return '<b>'+ this.x +'</b><br/>'+
+						this.series.name +': '+ this.y +'<br/>'+
+						'Total: '+ this.point.stackTotal;
+				}
+			},
+			title: {
+				text: params.title,
+				style: {
+					"font-family": "Segoe UI",
+					"color": "#000000",
+					"font-size": "20px",
+				},
+				align: "left",
+				x: 0,
+				margin: 50
+			},
+			xAxis: {
+				categories: params.strata_labels
+			},
+			yAxis: {
+				min: 0,
+				title: {
+					text: 'Count'
+				}
+			},
+			plotOptions: {
+				series: {
+					stacking: 'normal'
+				}
+			}
+		});
+		schart.addSeries({name: "Likes"})
+		schart.addSeries({name: "Reposts"})
+		schart.addSeries({name: "Comments"})
+		params.chart = schart
+	}
+	
+	function make_stratas_request(params, t1, t2) {
+		var series_types = {
+			active_posts_likes: [],
+			active_posts_comments: [],
+			active_posts_reposts: []
+		}
+		$.ajax({
+			url: '/group{{group_id}}/' + params.strata_type + '/' + t1 + '/' + t2 + '/',
+			success: function (data) {
+				data = data.response
+				var list = []
+				for (var e in data)
+					list.push ([e, data[e]])
+				list.sort (function (x, y) {
+					x = params.key_func(x[0])
+					y = params.key_func(y[0])
+					if (x > y)
+						return 1
+					else if (x < y)
+						return -1
+					else
+						return 0
+				})
+				for (var i = 0, l = list.length; i < l; i++) {
+					var stats = list[i][1].stats
+					for (var t in series_types) {
+						series_types[t].push(stats["active_posts_count"] > 0 ? stats[t] / stats["active_posts_count"] : 0)
+					}
+				}
+				params.chart.series[0].setData(series_types["active_posts_likes"])
+				params.chart.series[1].setData(series_types["active_posts_reposts"])
+				params.chart.series[2].setData(series_types["active_posts_comments"])
+			}
+		});
+	}
+	
+	for (i = 0, l = strata_charts.length; i < l; i++)
+		make_stratas_request(strata_charts[i], back_for_month, date_now)
 });
 </script>
 </head>
@@ -238,7 +394,11 @@ $(document).ready(function() {
 <div id="group_stats_snapshot_header">Stats snapshot</div>
 <div id="group_stats_snapshot"></div>
 <div id="group_users_chart" width="800" height="500" style="margin-bottom:20px; margin-top: 50px; clear: both"></div>
-<div id="group_activity_chart" width="800" height="500"></div>
+<div id="group_activity_chart" width="800" height="500" style="margin-bottom:20px;"></div>
+<div id="social_activity_hourly_stratified" width="800" height="500" ></div>
+First date: <input class='date-pick' type="text">&nbsp;&nbsp;Last date: <input class='date-pick' type="text"><div style="margin-bottom:20px;"></div>
+<div id="social_activity_daily_stratified" width="800" height="500" style="margin-bottom:20px;"></div>
+<div id="social_activity_content_stratified" width="800" height="500"></div>
 <script>
 /*total_users = []
 banned_users = []

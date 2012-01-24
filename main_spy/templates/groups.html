@@ -11,6 +11,7 @@
 body {
 	margin: 0px;
 	padding: 0px;
+	font-family: 'Segoe UI';
 }
 
 div.header {
@@ -83,24 +84,33 @@ div.group_info span {
 	cursor: pointer;
 }
 
-div.black_screen {
-	position: fixed;
-	width:100%;
-	height:10000px;
-	background: black;
-	display: none;
-	opacity: 0.7;
-}
-
 #group_info_updater {
 	width: 400px;
-	left: 50%;
-	margin-left: -200px;
 	height: 50px;
-	position: absolute;
-	top: 200px;
 	display: none;
 	background: white;
+	font-family: "Segoe UI";
+}
+
+div.group_updater_header {
+	font-size: 20px;
+	margin-bottom: 10px;
+}
+
+div.group_updater_update_button {
+	margin-top: 10px;
+	font-size: 18px;
+	color: #ff6600;
+	cursor: pointer;
+}
+
+div.group_info_cell {
+	margin-top: 8px;
+	margin-bottom: 8px;
+}
+
+#group_updater_header {
+	color: #ff6600;
 }
 
 div.inline {
@@ -109,23 +119,23 @@ div.inline {
 
 </style>
 <script src="{{ STATIC_URL }}js/jquery.js"></script>
+<script src="{{ STATIC_URL }}js/jquery.DOMWindow.js"></script>
 </head>
 <body>
 <div>
-	<div class="black_screen">
-		<div id="group_info_updater">
-			<div class="inline"></div>
-			<div class="inline">
-				<span>Agency:</span>
-				<input type="text" style="width: 80px" />
-			</div>
-			<div class="inline">
-				<span>Brand:</span>
-				<input type="text" style="width: 80px" />
-			</div>
-			<div class="inline">
-				Update
-			</div>
+	<div id="group_info_updater">
+		<div class="group_updater_header">Group <span id="group_updater_header"></span></div>
+		<input type="hidden" id="group_id_hidden_input" />
+		<div class="group_info_cell">
+			<span>Agency:</span>
+			<input id="group_agency_input" type="text" style="width: 410px" />
+		</div>
+		<div class="group_info_cell">
+			<span>Brand:</span>
+			<input id="group_brand_input" type="text" style="width: 420px" />
+		</div>
+		<div class="group_updater_update_button" onclick="update_group_info()">
+			Update
 		</div>
 	</div>
 	<div class="column" id="group_list_column">
@@ -135,7 +145,7 @@ div.inline {
 		{% for g in groups %}
 		<div class="group">
 			<div class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</div>
-			<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])">{% if g.agency|length_is:0 %}Empty agency{% else %}{{g.agency}}{% endif %} - {% if g.brand|length_is:0 %}Empty brand{% else %}{{g.brand}}{% endif %}</span></div>
+			<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])"><span id="group_agency_span_{{g.gid}}">{% if g.agency|length_is:0 %}Empty agency{% else %}{{g.agency}}{% endif %}</span> - <span id="group_brand_span_{{g.gid}}">{% if g.brand|length_is:0 %}Empty brand{% else %}{{g.brand}}{% endif %}</span></span></div>
 			<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
 		</div>
 		{% endfor %}
@@ -148,34 +158,66 @@ div.inline {
 			Statistics
 		</div>
 		<div class="group_asking_to_click second-column-header">Please choose a group from the list</div>
-		<iframe frameborder="no" id="graphFrame" width="820" height="1200"></iframe>
+		<iframe frameborder="no" id="graphFrame" width="820" height="3600"></iframe>
 	</div>
 </div>
 
 <script type="text/javascript">
-	var curSelected = null
-	
 	var groups_info = [
-		0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}" }{% endfor %}
+		0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}
 	]
-	groups_info.pop()
+	function find_group_by_id(gid) {
+		for (var i = 0, l = groups_info.length; i < l; i++) {
+			if (gid == groups_info[i].gid)
+				return groups_info[i]
+		}
+		return null
+	}
+	groups_info.shift()
 	
-	opened_dialog = null
+	var opened_dialog = null
+	var dialog_funcs = {
+		"group_info_updater": function (gid) {
+			$("#group_id_hidden_input")[0].value = gid
+			$("#group_agency_input")[0].value = $("#group_agency_span_" + gid)[0].innerHTML
+			$("#group_brand_input")[0].value = $("#group_brand_span_" + gid)[0].innerHTML
+			$("#group_updater_header")[0].innerHTML = find_group_by_id(gid).alias
+		}
+	}
 	function show_dialog (dialog_id, params) {
 		close_current_dialog()
-		$("div.black_screen")[0].style.display = "block"
-		$("#" + dialog_id)[0].style.display = "block"
-		opened_dialog = $("#" + dialog_id)[0]
+		dialog_funcs[dialog_id].apply (window, params)
+		opened_dialog = $("#" + dialog_id)
+		opened_dialog.openDOMWindow({
+			windowSourceID: '#' + dialog_id,
+			height: 150
+		})
 	}
 	
 	function close_current_dialog() {
 		if (opened_dialog != null) {
-			$("div.black_screen")[0].style.display = "none"
-			opened_dialog.style.display = "none"
+			opened_dialog.closeDOMWindow()
 			opened_dialog = null
 		}
 	}
 	
+	function update_group_info() {
+		var agency = $("#group_agency_input")[0].value
+		var brand = $("#group_brand_input")[0].value
+		var gid = $("#group_id_hidden_input")[0].value
+		$.ajax({
+			url: '/group' + gid + '/update_info/',
+			type: 'post',
+			data: 'agency=' + encodeURIComponent(agency) + "&brand=" + encodeURIComponent(brand),
+			success: function (data) {
+				$("#group_agency_span_" + gid)[0].innerHTML = agency
+				$("#group_brand_span_" + gid)[0].innerHTML = brand;
+				close_current_dialog()
+			}
+		})
+	}
+	
+	var curSelected = null
 	function showGroup (gid, obj) {
 		document.getElementById ("graphFrame").src = "group" + gid
 		$("div.group_asking_to_click")[0].style.display = "none"

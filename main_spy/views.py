@@ -1,5 +1,6 @@
 from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment
 from group_spy.utils.misc import get_vk_crawler, get_credentials
+from group_spy.main_spy.group_scan import compute_group_activity
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponse
@@ -115,7 +116,38 @@ def get_series_from(objects, time_start, time_end):
     quanta = choose_quanta(interval)
     method = get_extraction_method_for_interval(interval, quanta)
     return method(objects, quanta, time_start, time_end)
-    
+
+def get_abs_seconds_diff(d1, d2):
+    if d1 > d2:
+        return (d1 - d2)
+    else:
+        return (d2 - d1)
+
+def get_approximation_for_stat(objects, date, max_absolute_error):
+    closest_values = []
+    try:
+        closest_after = objects.filter(date__gte=date)[0]
+        closest_values.append({'date': closest_after.date, 'value': closest_after.value})
+    except IndexError:
+        pass
+    try:
+        closest_before = objects.filter(date__lte=date).order_by('-date')[0]
+        closest_values.append({'date': closest_before.date, 'value': closest_before.value})
+    except IndexError:
+        pass
+    valid_values = [v for v in closest_values if get_abs_seconds_diff(v['date'], date) < max_absolute_error]
+    total_weight = 0
+    if len(valid_values) == 0:
+        return "undefined"
+    for v in valid_values:
+        v['weight'] = 1 - get_abs_seconds_diff(v['date'], date).total_seconds() / max_absolute_error.total_seconds()
+        total_weight = total_weight + v['weight']
+    final_value = 0
+    for v in valid_values:
+        v['weight'] = v['weight'] / total_weight
+        final_value = final_value + v['value'] * v['weight']
+    return final_value
+       
 @json_response
 def get_series_group_wide (request, group_id, stat_id, time_start, time_end):
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
@@ -133,10 +165,70 @@ def get_series_for_posts (request, group_id, stat_id, content_types, time_start,
         raise 'x'
     return get_series_from(all_posts, time_start, time_end)
 
+def get_posts_in_period(group_id, time_start, time_end):
+    return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start))
+
+def intraday_stratify(posts):
+    stratas = {k: {'posts': [], 'stats': {}} for k in xrange(24)}
+    for p in posts:
+        stratas[p.date.hour]['posts'].append(p)
+    return stratas
+
+def intraweek_stratify(posts):
+    stratas = {k: {'posts': [], 'stats': {}} for k in xrange(7)}
+    for p in posts:
+        stratas[p.date.weekday()]['posts'].append(p)
+    return stratas
+
+def content_type_stratify(posts):
+    types = ['no_attachment', 'photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']
+    stratas = {k: {"posts": [], "stats": {}} for k in types}
+    for p in posts:
+        attachments = list(PostAttachment.objects.filter(post=p.id))
+        if attachments:
+            for a in attachments:
+                if not a.attachment_type in stratas:
+                    stratas[a.attachment_type] = {'posts': [], 'stats': {}}
+                stratas[a.attachment_type]['posts'].append(p)
+        else:
+            stratas["no_attachment"]['posts'].append(p)
+    return stratas
+        
+def compute_activity_for_stratas(stratas):
+    for k, s in stratas.iteritems():
+        stratas[k]['stats'] = compute_group_activity(s['posts'])
+        del stratas[k]['posts']
+    return stratas
+
+def get_social_activity_stratified_template_func(group_id, time_start, time_end, stratification):
+    posts = get_posts_in_period(group_id, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
+    stratas = stratification(posts)
+    return compute_activity_for_stratas(stratas)
+
+@json_response
+def get_social_activity_for_intraday_stratas(request, group_id, time_start, time_end):
+    return get_social_activity_stratified_template_func(group_id, time_start, time_end, intraday_stratify)
+    
+@json_response
+def get_social_activity_for_intraweek_stratas(request, group_id, time_start, time_end):
+    return get_social_activity_stratified_template_func(group_id, time_start, time_end, intraweek_stratify)
+
+@json_response
+def get_social_activity_for_content_stratas(request, group_id, time_start, time_end):
+    return get_social_activity_stratified_template_func(group_id, time_start, time_end, content_type_stratify)
+    
 @json_response
 def get_group_current_stats(request, group_id):
     stats = ["total_users", "faceless_users", "banned_users", "active_posts_count", "active_posts_likes", "active_posts_comments", "active_posts_reposts"]
-    stats_data = {s: GroupObservation.objects.filter(statistics=s, group=group_id).latest("date").value for s in stats}
+    stats_data = {}
+    now = datetime.now()
+    for s in stats:
+        objects = GroupObservation.objects.filter(statistics=s, group=group_id)
+        stats_data[s] = {}
+        stats_data[s]['latest'] = GroupObservation.objects.filter(statistics=s, group=group_id).latest("date").value
+        stats_data[s]['day_ago'] = get_approximation_for_stat(objects, now - timedelta(days=1), timedelta(hours=2))
+        stats_data[s]['week_ago'] = get_approximation_for_stat(objects, now - timedelta(days=7), timedelta(hours=12))
+        stats_data[s]['month_ago'] = get_approximation_for_stat(objects, now - timedelta(days=30), timedelta(days=1))
     return stats_data
 
 @json_response
