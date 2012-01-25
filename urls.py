@@ -16,5 +16,6 @@ urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'crossdomain.xml', 'main_spy.views.crossdomainXML'),
     url(r'series/group(?P<group_id>\d+)/(?P<stat_id>[a-z_]+)/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.views.get_series_group_wide'),
-    url(r'series/group(?P<group_id>\d+)/active_post_stats/(?P<content_types>[a-z_]*)/(?P<stat_id>[a-z_]+)/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.views.get_series_for_posts')
+    url(r'series/group(?P<group_id>\d+)/social_dynamics/(?P<content_types>[a-z_]*)/(?P<stat_id>[a-z_]+)/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.views.get_series_for_posts'),
+    url(r'series/group(?P<group_id>\d+)/social_dynamics_all/(?P<content_types>[a-z_]*)/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.views.get_all_stats_series_for_posts')
 )

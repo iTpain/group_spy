@@ -73,6 +73,14 @@ def choose_quanta(interval):
         return timedelta(days=1)
     else:
         return timedelta(hours=1)
+    
+def choose_max_absolute_error(interval):
+    if interval > timedelta(days=365):
+        return timedelta(days=2)
+    elif interval > timedelta(days=30):
+        return timedelta(hours=12)
+    else:
+        return timedelta(hours=1)
 
 def pointwise_extract(objects, quanta, time_start, time_end):
     current_time = time_start
@@ -149,21 +157,45 @@ def get_approximation_for_stat(objects, date, max_absolute_error):
     return final_value
        
 @json_response
-def get_series_group_wide (request, group_id, stat_id, time_start, time_end):
+def get_series_group_wide(request, group_id, stat_id, time_start, time_end):
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
     series = get_series_from(all_objects, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
     return {'series': series}
 
 @json_response
-def get_series_for_posts (request, group_id, stat_id, content_types, time_start, time_end):
-    all_posts = Post.objects.filter(group=group_id, closed=False)
+def get_series_for_posts(request, group_id, stat_id, content_types, time_start, time_end):
+    return get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end)
+
+def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end):
+    time_start = datetime.fromtimestamp(int(time_start))
+    time_end = datetime.fromtimestamp(int(time_end))
+    content_types = [c for c in content_types.split(",") if len(c) > 0]
+    quanta = choose_quanta(time_end - time_start)
+    series = []
+    
+    posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start, date__lte=time_end)
     if len(content_types) > 0:
-        content_types = content_types.split(",")
-        attachments = PostAttachment.objects.filter(post__in=[post.id for post in all_posts]).filter(attachment_type__in=content_types)
-        posts_ids = {attachment.post_id: True for attachment in attachments}.values()
-        print posts_ids
-        raise 'x'
-    return get_series_from(all_posts, time_start, time_end)
+        attachments = PostAttachment.objects.filter(post__in=[post.id for post in posts], attachment_type__in=content_types)
+        posts_ids = {attachment.post_id: True for attachment in attachments}
+        posts = [post for post in posts if post.id in posts_ids]
+    stats = {p.id: PostObservation.objects.filter(post=p, statistics=stat_id).latest("date").value for p in posts}
+    
+    current_time = time_start
+    while current_time <= time_end:
+        posts_in_quanta = [p for p in posts if p.date <= current_time and p.last_comment_date >= current_time]
+        stat = 0
+        for p in posts_in_quanta:
+            stat = stat + stats[p.id]
+        series.append([1000 * time.mktime(current_time.timetuple()), stat])
+        current_time += quanta
+    return {'series': series}
+
+@json_response
+def get_all_stats_series_for_posts(request, group_id, content_types, time_start, time_end):
+    stats = {'likes': [], 'comments': [], 'reposts': []}
+    for k in stats.keys():
+        stats[k] = get_series_for_posts_inner(group_id, k, content_types, time_start, time_end)
+    return stats
 
 def get_posts_in_period(group_id, time_start, time_end):
     return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start))

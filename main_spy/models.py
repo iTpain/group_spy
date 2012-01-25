@@ -20,6 +20,9 @@ class Post(models.Model):
 class PostAttachment(models.Model):
     post = models.ForeignKey(Post, null=True)
     attachment_type = models.CharField(max_length=32)
+    
+    def __str__(self):
+        return "<" + str(self.post) + ", " + str(self.attachment_type) + ">"
 
 class PostObservation(models.Model):
     date = models.DateTimeField(auto_now=True, auto_now_add=True)

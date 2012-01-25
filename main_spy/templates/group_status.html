@@ -55,14 +55,24 @@ input.date-pick {
 	width: 80px;
 }
 
+div.chart_container {
+	margin-bottom: 20px;
+	width: 800px;
+	height: 500px;
+}
+
 </style>
 
 <script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/highstock.src.js" type="text/javascript"></script>
 <script>
 var chart1; // globally available
 $(document).ready(function() {
-	
+	date_now = Math.round (new Date().getTime() / 1000)
+	back_for_month = date_now - 90 * 24 * 60 * 60
+
+	// snapshot
 	var snapshot_decoration = {
 		"banned_users": {
 			title: "Banned users",
@@ -152,89 +162,74 @@ $(document).ready(function() {
 		}
 	});
 	
+	// group users/activity diagrams
+	function process_series_response(update, index, chart) {
+		//console.log (data)
+		current_series = chart.series[index].data
+		
+		var cur_update_index = 0
+		var cur_series_index = 0
+		var update_len = update.length
+		var series_len = current_series.length
+		var points_to_add = []
+		while (cur_update_index < update_len) {
+			if (cur_series_index >= series_len) {
+				for (var i = cur_update_index; i < update_len; i++)
+					points_to_add.push (update[i])
+				break
+			}
+			var date_update = update[cur_update_index][0]
+			var date_series = current_series[cur_series_index][0]
+			if (date_update > date_series) {
+				cur_series_index++
+			} else if (date_update < date_series) {
+				points_to_add.push (update[cur_update_index])
+				cur_update_index++
+			} else {
+				cur_series_index++
+				cur_update_index++
+			}
+		}
+		
+		for (var i = 0, l = points_to_add.length; i < l; i++) {
+			chart.series[index].addPoint (points_to_add[i])
+		}
+		
+		//chart.setSize(800, 500)
+	}
+	
 	function make_request(t1, t2, stat_id, index, chart) {
 		$.ajax ({
 			url: '/series/group{{ group_id }}/' + stat_id + '/' + t1 + '/' + t2 + '/',
-			success: function (data) {
-				update = data.response.series
-				current_series = chart.series[index].data
-				
-				var cur_update_index = 0
-				var cur_series_index = 0
-				var update_len = update.length
-				var series_len = current_series.length
-				var points_to_add = []
-				while (cur_update_index < update_len) {
-					if (cur_series_index >= series_len) {
-						for (var i = cur_update_index; i < update_len; i++)
-							points_to_add.push (update[i])
-						break
-					}
-					var date_update = update[cur_update_index][0]
-					var date_series = current_series[cur_series_index][0]
-					if (date_update > date_series) {
-						cur_series_index++
-					} else if (date_update < date_series) {
-						points_to_add.push (update[cur_update_index])
-						cur_update_index++
-					} else {
-						cur_series_index++
-						cur_update_index++
-					}
-				}
-				
-				for (var i = 0, l = points_to_add.length; i < l; i++) {
-					chart.series[index].addPoint (points_to_add[i])
-				}
-				
-				chart.setSize(800, 400)
-			}
+			success: function(data) { process_series_response(data.response.series, index, chart) }
 		});
 	}
 	
-	function refresh_chart(chart_desc, t1, t2) {
-		for (var i = 0, l = chart_desc.series_opts.length; i < l; i++)
-			make_request(t1, t2, chart_desc.series_opts[i].stat_id, chart_desc.series_opts[i].index, chart_desc.chart)
-	}
-	
-	series_opts_group_users_chart = [
-		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
-		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
-		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
-	]
-	
-	series_opts_group_activity_chart = [
-		{ color: '#00ff00', label: "Active posts count", stat_id: "active_posts_count", index: 0},
-		{ color: '#ff0000', label: "Total likes (active posts)", stat_id: "active_posts_likes", index: 1 },
-		{ color: '#ff6600', label: "Total comments (active posts)", stat_id: "active_posts_comments", index: 2},
-		{ color: '#0000ff', label: "Total reposts (active posts)", stat_id: "active_posts_reposts", index: 3}
-	]
-	
-	date_now = Math.round (new Date().getTime() / 1000)
-	back_for_month = date_now - 90 * 24 * 60 * 60
-
-	group_charts = [
-		{ title: 'General users stats', series_opts: series_opts_group_users_chart, container: "group_users_chart" },
-		{ title: 'General activity stats', series_opts: series_opts_group_activity_chart, container: "group_activity_chart" }
-	]
-	
-	for (var i = 0, l = group_charts.length; i < l; i++) {
-		var chart_description = group_charts[i]
-		var chart = new Highcharts.Chart({
+	function create_line_chart(chart_description, refresh_func) {
+		var opts = chart_description.series_opts
+		var series_objs = [{name: 'x', data: []}]
+		for (var j = 0, ln = opts.length; j < ln; j++)
+			series_objs.push({
+				type: 'line',
+				name: opts[j].label,
+				color: opts[j].color,
+				data: [[0, 0], [1, 1]],
+				lineWidth: 1
+			});
+		var chart = new Highcharts.StockChart({
 			chart: {
 				renderTo: chart_description.container,
-				type: 'line',
 				width: 800,
 				height: 500,
 				zoomType: 'x',
 				events: {
-					selection: (function (cd) { return function(event) {
-							if (event.xAxis) {
-								refresh_chart (cd, Math.round (event.xAxis[0].min / 1000), Math.round (event.xAxis[0].max / 1000))
-							}
+					selection: function(event) {
+						if (event.xAxis) {
+							refresh_func (chart_description, Math.round (event.xAxis[0].min / 1000), Math.round (event.xAxis[0].max / 1000))
 						}
-					}) (chart_description)
+					}
 				},
+				animation: false
 			},
 			title: {
 				text: chart_description.title,
@@ -251,29 +246,61 @@ $(document).ready(function() {
 				type: 'datetime',
 				min: back_for_month * 1000,
 				showLastLabel: true,
-				maxPadding: 0.02
+				maxPadding: 0.0
 			},
 			yAxis: {
 				title: {
 					text: 'Count'
 				},
 				min: 0
-			}
+			},
+			plotOptions: {
+				line: {marker: {
+						enabled: false,
+						states: {
+							hover: {
+								enabled: true,
+								radius: 5
+							}
+						}
+					},
+					shadow: false
+				}
+			},
+			series: series_objs
 		});
-		var opts = chart_description.series_opts
-		for (var j = 0, ln = opts.length; j < ln; j++)
-			chart.addSeries ({
-				type: 'line',
-				name: opts[j].label,
-				color: opts[j].color,
-				data: [],
-				lineWidth: 1
-			})
-		chart_description.chart = chart
+		chart_description.chart = chart	
+	}
+	
+	function refresh_groupwide_charts(chart_desc, t1, t2) {
+		for (var i = 0, l = chart_desc.series_opts.length; i < l; i++)
+			make_request(t1, t2, chart_desc.series_opts[i].stat_id, chart_desc.series_opts[i].index, chart_desc.chart)
+	}
+	
+	series_opts_group_users_chart = [
+		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
+		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
+		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
+	]
+	
+	series_opts_group_activity_chart = [
+		{ color: '#00ff00', label: "Active posts count", stat_id: "active_posts_count", index: 0},
+		{ color: '#ff0000', label: "Total likes (active posts)", stat_id: "active_posts_likes", index: 1 },
+		{ color: '#ff6600', label: "Total comments (active posts)", stat_id: "active_posts_comments", index: 2},
+		{ color: '#0000ff', label: "Total reposts (active posts)", stat_id: "active_posts_reposts", index: 3}
+	]
+
+	group_charts = [
+		{ title: 'General users stats', series_opts: series_opts_group_users_chart, container: "group_users_chart" },
+		{ title: 'General activity stats', series_opts: series_opts_group_activity_chart, container: "group_activity_chart" }
+	]
+	
+	for (var i = 0, l = group_charts.length; i < l; i++) {
+		create_line_chart(group_charts[i], refresh_groupwide_charts)
 	}
 
 	for (var i = 0, l = group_charts.length; i < l; i++) {
-		refresh_chart(group_charts[i], back_for_month, date_now)
+		refresh_groupwide_charts(group_charts[i], back_for_month, date_now)
 	}
 	
 	/* stratification charts */
@@ -308,7 +335,7 @@ $(document).ready(function() {
 				renderTo: params.container,
 				defaultSeriesType: 'column',
 				width: 800,
-				height: 600
+				height: 500
 			},
 			tooltip: {
 				formatter: function() {
@@ -387,18 +414,50 @@ $(document).ready(function() {
 	
 	for (i = 0, l = strata_charts.length; i < l; i++)
 		make_stratas_request(strata_charts[i], back_for_month, date_now)
+	
+	// social dynamics
+	var series_opts_soc_dynamics_chart = [
+		{ color: '#ff0000', label: "Likes", stat_id: "likes", index: 0 },
+		{ color: '#ff6600', label: "Posts", stat_id: "comments", index: 1},
+		{ color: '#0000ff', label: "Reposts", stat_id: "reposts", index: 2}
+	]
+	
+	function refresh_social_dynamics_chart(chart_desc, t1, t2) {
+		make_social_dynamics_request(t1, t2, '', soc_dynamics_chart_desc)
+	}
+	
+	function make_social_dynamics_request(t1, t2, content_types, description) {
+		$.ajax ({
+			url: '/series/group{{ group_id }}/social_dynamics_all/' + content_types + '/' + t1 + '/' + t2 + '/',
+			success: function(data) { 
+				var series_info = description.series_opts
+				//console.log(data.response['likes'].series)
+				for (var i = 0, l = series_info.length; i < l; i++) {
+					//console.log(series_info[i])
+					var series = data.response[series_info[i].stat_id].series
+					if (series[series.length - 1][1] == 0)
+						series.pop()
+					process_series_response(series, series_info[i].index, description.chart) 
+				}
+			}
+		});	
+	}
+	
+	var soc_dynamics_chart_desc = { title: 'Social activity dynamics', series_opts: series_opts_soc_dynamics_chart, container: "group_social_activity_dynamics" }
+	create_line_chart(soc_dynamics_chart_desc, refresh_social_dynamics_chart)
+	refresh_social_dynamics_chart(soc_dynamics_chart_desc, back_for_month, date_now)
 });
 </script>
 </head>
 <body>
 <div id="group_stats_snapshot_header">Stats snapshot</div>
 <div id="group_stats_snapshot"></div>
-<div id="group_users_chart" width="800" height="500" style="margin-bottom:20px; margin-top: 50px; clear: both"></div>
-<div id="group_activity_chart" width="800" height="500" style="margin-bottom:20px;"></div>
-<div id="social_activity_hourly_stratified" width="800" height="500" ></div>
-First date: <input class='date-pick' type="text">&nbsp;&nbsp;Last date: <input class='date-pick' type="text"><div style="margin-bottom:20px;"></div>
-<div id="social_activity_daily_stratified" width="800" height="500" style="margin-bottom:20px;"></div>
-<div id="social_activity_content_stratified" width="800" height="500"></div>
+<div id="group_users_chart" class="chart_container" style="margin-top: 50px; clear: both"></div>
+<div id="group_activity_chart" class="chart_container"></div>
+<div id="group_social_activity_dynamics" class="chart_container"></div>
+<div id="social_activity_hourly_stratified" class="chart_container"></div>
+<div id="social_activity_daily_stratified" class="chart_container"></div>
+<div id="social_activity_content_stratified" class="chart_container"></div>
 <script>
 /*total_users = []
 banned_users = []

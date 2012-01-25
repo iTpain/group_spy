@@ -9,6 +9,14 @@ setup_environ(settings)
 from babysitter.daemon import multilaunch, launch
 from group_spy.main_spy.group_scan import GroupScanner
 from group_spy.main_spy.post_scan import PostsScanner
+from group_spy.main_spy.views import get_series_for_posts
+from datetime import datetime
+
+#http://localhost:8000/series/group21977113/social_dynamics//reposts/1326791430/1327557922/
+#past = datetime.now()
+#get_series_for_posts(None, '21977113', 'reposts', '', '1326791430', '1327557922')
+#print datetime.now() - past
+#exit()
 
 multilaunch([
     [GroupScanner, settings.GROUPS_SCAN_INTERVAL], 
