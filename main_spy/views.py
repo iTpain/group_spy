@@ -54,8 +54,7 @@ def receive_vk_credentials(request, api_id, secret, sid, viewer_id):
         except:
             return {'errors': ["Failed to write credentials file"]}
         good_credentials = get_credentials()
-        uniques_dict = {c['viewer_id']: c for c in good_credentials} 
-        unique_credentials = [v for k, v in uniques_dict.iteritems()]
+        unique_credentials = {c['viewer_id']: c for c in good_credentials}.values()
         try:
             credentials_file = open(file_path, "w")
             credentials_file.write(json.dumps(unique_credentials))
@@ -85,6 +84,7 @@ def choose_max_absolute_error(interval):
 def pointwise_extract(objects, quanta, time_start, time_end):
     current_time = time_start
     prepped_data = []
+    first_intersection_flag = False
     while current_time <= time_end:
         obs = list(objects.filter(date__gte=current_time)[0:1])
         if len(obs) == 0:
@@ -92,6 +92,16 @@ def pointwise_extract(objects, quanta, time_start, time_end):
         else:
             prepped_data.append([1000 * time.mktime(obs[0].date.timetuple()), obs[0].value])
             current_time = obs[0].date + quanta
+            if current_time > time_end and not first_intersection_flag:
+                current_time = time_end
+                first_intersection_flag = True
+    try:
+        latest = objects.filter(date__lte=current_time).latest("date")
+        latest_time = 1000 * time.mktime(latest.date.timetuple())
+        if len(prepped_data) == 0 or latest_time != prepped_data[len(prepped_data) - 1][0]:
+            prepped_data.append([latest_time, latest.value])
+    except:
+        pass
     return prepped_data
 
 
@@ -156,11 +166,23 @@ def get_approximation_for_stat(objects, date, max_absolute_error):
         final_value = final_value + v['value'] * v['weight']
     return final_value
        
-@json_response
-def get_series_group_wide(request, group_id, stat_id, time_start, time_end):
+       
+def get_series_group_wide_inner(group_id, stat_id, time_start, time_end):
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
     series = get_series_from(all_objects, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
     return {'series': series}
+       
+@json_response
+def get_series_group_wide(request, group_id, stat_id, time_start, time_end):
+    return get_series_group_wide_inner(group_id, stat_id, time_start, time_end)
+
+@json_response
+def get_series_group_wide_all_social_stats(request, group_id, time_start, time_end):
+    stats = {'active_posts_count': [], 'active_posts_likes': [], 'active_posts_reposts': [], 'active_posts_comments': []}
+    for s in stats.keys():
+        stats[s] = get_series_group_wide_inner(group_id, s, time_start, time_end)
+    return stats
+    
 
 @json_response
 def get_series_for_posts(request, group_id, stat_id, content_types, time_start, time_end):
@@ -186,7 +208,7 @@ def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, tim
         stat = 0
         for p in posts_in_quanta:
             stat = stat + stats[p.id]
-        series.append([1000 * time.mktime(current_time.timetuple()), stat])
+        series.append([1000 * time.mktime(current_time.timetuple()), stat, len(posts_in_quanta)])
         current_time += quanta
     return {'series': series}
 

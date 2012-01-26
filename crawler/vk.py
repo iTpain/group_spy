@@ -94,21 +94,6 @@ class VKCrawler(object):
         for post in self.generic_countable_objects_generator(params, lambda r: r[1:], lambda post: post['date'] >= from_time):
             yield post
             
-    #def get_posts_by_id(self, ids):
-    #    params = {'method': 'wall.getById'}
-    #    fetched = 0
-    #    fetch_per_request = 100
-    #    idslen = len(ids)
-    #    while fetched < idslen:
-    #        params['posts'] = ",".join(ids[fetched:fetched + fetch_per_request])
-    #        params['posts'] = "13643401_68367"
-    #        vk_data = self._request_maker.blocking_request(params)
-    #        print params['posts']
-    #        print vk_data
-    #        for p in vk_data:
-    #            yield p
-    #        fetched += fetch_per_request
-            
     def get_comments_for_post(self, post_id, owner_id):
         params = {'method': 'wall.getComments', 'sort': 'desc', 'owner_id': owner_id, 'post_id': post_id}
         for comment in self.generic_countable_objects_generator(params, lambda r: r[1:], lambda comment: True):
@@ -155,7 +140,3 @@ class VKCrawler(object):
                             continue
             if finished_flag:
                 return        
-                
-                
-
-        

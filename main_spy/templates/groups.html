@@ -154,7 +154,7 @@ div.inline {
 		</div>
 	</div>
 	<div class="column">
-		<div class="header second-column-header">
+		<div class="header second-column-header" id="stats-header">
 			Statistics
 		</div>
 		<div class="group_asking_to_click second-column-header">Please choose a group from the list</div>
@@ -221,9 +221,9 @@ div.inline {
 	function showGroup (gid, obj) {
 		document.getElementById ("graphFrame").src = "group" + gid
 		$("div.group_asking_to_click")[0].style.display = "none"
-		$("#group_alias_" + gid)[0].style.color = "#ff6600"
 		if (curSelected != null) 
 			$(curSelected)[0].style.color = ""
+		$("#group_alias_" + gid)[0].style.color = "#ff6600"
 		curSelected = $("#group_alias_" + gid)[0]
 	}
 	
