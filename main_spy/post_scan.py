@@ -27,7 +27,7 @@ class PostsScanner(object):
             except Post.DoesNotExist:
                 now = iso_date_from_ts(time.time())
                 post_date = iso_date_from_ts(p['date'])
-                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=datetime.now(), last_comment_date=datetime.now(), group_id=gid)
+                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
                 print "Post " + str(p['id']) + " added, date published: " + post_date
                 new_post.save()
                 self.create_attachments_for_post (p, new_post)
@@ -66,15 +66,14 @@ class PostsScanner(object):
                 max_time_comment = c['date']
             if c['date'] < min_time_comment:
                 min_time_comment = c['date']
-        post.first_comment_date = datetime.fromtimestamp(min_time_comment)
+        post.first_comment_date = post.first_comment_date if min_time_comment == 10000000000 else datetime.fromtimestamp(min_time_comment)
         post.last_comment_date = datetime.fromtimestamp(max_time_comment)
         if datetime.now() - post.last_comment_date > timedelta(days=8):
             post.closed = True
             print "Closing post " + str(post.pid)
-        else:
-            stats = ['likes', 'reposts', 'comments']
-            for s in stats:
-                obs = PostObservation(date=now, value=post_fresh_vk_data[s]['count'], post_id=post.id, statistics=s)
-                obs.save()           
+        stats = ['likes', 'reposts', 'comments']
+        for s in stats:
+            obs = PostObservation(date=now, value=post_fresh_vk_data[s]['count'], post_id=post.id, statistics=s)
+            obs.save()           
         post.save()
         

@@ -401,7 +401,9 @@ $(document).ready(function() {
 	series_opts_group_users_chart = [
 		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
 		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
-		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2}
+		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2},
+		{ color: '#44aa44', label: "Active users", stat_id: "users_1", index: 3},
+		{ color: '#22ff22', label: "Very active users", stat_id: "users_3", index: 4}
 	]
 	
 	series_opts_group_activity_chart = [
@@ -624,51 +626,5 @@ $(document).ready(function() {
 <div class="chart_container"><div id="social_activity_hourly_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_daily_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_content_stratified"></div></div>
-<script>
-/*total_users = []
-banned_users = []
-faceless_users = []
-labels = []
-{% for v in values.total_users %}
-	total_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
-{% endfor %}
-{% for v in values.banned_users %}
-	banned_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
-{% endfor %}
-{% for v in values.faceless_users %}
-	faceless_users[{{ forloop.counter0 }}] = [Date.UTC ({{ v.time }}), {{ v.value }}, '{{ v.raw_time }}', '{{ v.value }} at {{ v.raw_time }}']
-{% endfor %}
-
-window.onload = function () {
-    line = new RGraph.Scatter("myCanvasTag", [total_users, banned_users, faceless_users]);
-	line.Set('chart.line', true);
-	line.Set('chart.xmin', total_users[0][0]);
-    line.Set('chart.xmax', total_users[total_users.length - 1][0]);
-	line.Set('chart.line.colors', ['blue', 'red', 'orange']);
-	line.Set("chart.text.font", "Myriad Pro")
-	line.Set("chart.gutter.left", 60)
-	line.Set("chart.gutter.top", 40)
-	line.Set("chart.gutter.right", 160)
-	line.Set("chart.key", ["Total users", "Banned users", "Faceless users"])
-	line.Set('chart.key.position', 'gutter');
-	line.Set('chart.tickmarks', null);
-	line.Set('chart.tooltips.effect', 'snap');
-	line.Set("chart.labels", [[total_users[0][2], total_users[0][0]], [total_users[total_users.length - 1][2], total_users[total_users.length - 1][0]]])
-	//line.Set('chart.labels.specific.align', 'center');
-    line.Draw();
-	
-	
-	
-	//line2 = new RGraph.Line("myCanvasTag", [10, 20, 30 , 40, 50, 60, 70, 80, 90, 85, 80, 50])
-	//line2.Set ('chart.colors', ['blue'])
-	//line2.Draw ()
-}
-*/
-/*element = document.createElement ("div")
-element.innerHTML = "<div style='margin-top: 15px; margin-left: 60px; font-family: \"Segoe UI\"'>Total users: " + total_users[total_users.length - 1][1] + "</div>"
-					+ "<div style='margin-left: 60px; font-family: \"Segoe UI\"'>Banned users: " + banned_users[total_users.length - 1][1] + " (" + (100 * banned_users[banned_users.length - 1][1] / total_users[total_users.length - 1][1]).toPrecision(2) + "%)</div>"
-					+ "<div style='margin-left: 60px; font-family: \"Segoe UI\"'>Faceless users: " + faceless_users[total_users.length - 1][1] + " (" + (100 * faceless_users[banned_users.length - 1][1] / total_users[total_users.length - 1][1]).toPrecision(2) + "%)</div>"
-document.body.appendChild (element)*/
-</script>
 </body>
 </html>

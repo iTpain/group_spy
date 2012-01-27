@@ -223,6 +223,8 @@ def get_posts_in_period(group_id, time_start, time_end):
     return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start))
 
 def intraday_stratify(posts):
+    print len(posts)
+    
     stratas = {k: {'posts': [], 'stats': {}} for k in xrange(24)}
     for p in posts:
         stratas[p.date.hour]['posts'].append(p)

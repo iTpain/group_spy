@@ -9,12 +9,15 @@ setup_environ(settings)
 from babysitter.daemon import multilaunch, launch
 from group_spy.main_spy.group_scan import GroupScanner
 from group_spy.main_spy.post_scan import PostsScanner
-from group_spy.main_spy.views import get_series_for_posts
+from group_spy.main_spy.views import get_series_for_posts, get_social_activity_for_intraday_stratas
 from datetime import datetime
 
+
+past = datetime.now()
 #http://localhost:8000/series/group21977113/social_dynamics//reposts/1326791430/1327557922/
-#past = datetime.now()
 #get_series_for_posts(None, '21977113', 'reposts', '', '1326791430', '1327557922')
+#http://localhost:8000/group13643401/intraday_stratify/1325068941/1327660941/
+#get_social_activity_for_intraday_stratas(None, '13643401', '1325068941', '1327660941')
 #print datetime.now() - past
 #exit()
 

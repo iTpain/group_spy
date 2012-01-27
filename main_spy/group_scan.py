@@ -8,7 +8,11 @@ def compute_group_activity(active_posts):
     response_stats = {"likes": "active_posts_likes", "comments": "active_posts_comments", "reposts": "active_posts_reposts"}
     for post in active_posts:
         for k, v in stats.iteritems():
-            stats[k] = v + PostObservation.objects.filter(post=post, statistics=k).latest("date").value
+            try:
+                value = PostObservation.objects.filter(post=post, statistics=k).latest("date").value
+            except PostObservation.DoesNotExist:
+                value = 0
+            stats[k] = v + value 
     mapped_stats = {}
     for k, v in stats.iteritems():
         mapped_stats[response_stats[k]] = v
@@ -26,9 +30,11 @@ class GroupScanner(object):
         for g in groups:
             try:
                 print "Scanning group " + g.gid
+                active_posts = list(Post.objects.filter(closed=False, group=g.gid))
+                auditory_result = self.scan_auditory_activity(crawler, active_posts)
                 users_result = self.scan_group_users(crawler, g.gid)
-                activity_result = compute_group_activity(list(Post.objects.filter(closed=False, group=g.gid)))
-                self.write_observations(g, dict(users_result.items() + activity_result.items()))
+                activity_result = compute_group_activity(active_posts)
+                self.write_observations(g, dict(dict(users_result.items() + activity_result.items()).items() + auditory_result.items()))
                 g.last_scanned = datetime.now()
                 print "Group " + g.gid + " successfully scanned"
             except Exception as e:
@@ -44,6 +50,25 @@ class GroupScanner(object):
         except Exception as e:
             LogError(e, "Failed to get groups info")
     
+    def scan_auditory_activity(self, crawler, active_posts):
+        uids = {}
+        for post in active_posts:
+            comments_user_ids = [str(c['uid']) for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id))]
+            likes_user_ids = [str(l) for l in crawler.get_likes_for_object('post', "-" + str(post.group_id), post.pid, False)]
+            total_ids = comments_user_ids + likes_user_ids
+            for uid in total_ids:
+                if not uid in uids:
+                    uids[uid] = 0
+                uids[uid] += 1
+        print total_ids
+        raise 7
+        result = {'users_1': 0, 'users_3': 0}
+        for uid in uids:
+            if uids[uid] >= 3:
+                result['users_3'] += 1
+            result['users_1'] += 1
+        return result
+        
     def scan_group_users(self, crawler, gid):
         total_users = 0
         banned_users = 0
