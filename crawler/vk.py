@@ -54,8 +54,11 @@ class VKCrawler(object):
             return False
     
     def get_profiles(self, uids):
-        return (user for user in self.set_generator({'method': 'getProfiles', 'fields': 'sex,photo'}, 'uids', uids))
-                
+        return (user for user in self.set_generator({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city'}, 'uids', uids))
+    
+    def get_cities(self, cids):
+        return (city for city in self.set_generator({'method': 'places.getCityById'}, 'cids', cids))
+               
     def get_groups(self, gids):
         return (group for group in self.set_generator({'method': 'groups.getById'}, 'gids', gids))
                 
@@ -71,12 +74,12 @@ class VKCrawler(object):
                 for p in params:
                     req_dict[p] = params[p]
                 job = GenericLoadJob(req_dict, c)
-                print "starting g-job for " + str(chunk_per_load * i + index * self._profiles_count_per_load) + "-" + str(chunk_per_load * i + (index + 1) * self._profiles_count_per_load)
+                #print "starting g-job for " + str(chunk_per_load * i + index * self._profiles_count_per_load) + "-" + str(chunk_per_load * i + (index + 1) * self._profiles_count_per_load)
                 job.start()
                 jobs.append(job)
             for j in jobs:
                 j.join()
-            print "all g-jobs completed"
+            #print "all g-jobs completed"
             for (r, error) in [(j.response, j.error) for j in jobs]:
                 if r == None:
                     raise error
@@ -116,7 +119,7 @@ class VKCrawler(object):
                 offset += count
                 for p in request_params:
                     req_dict[p] = request_params[p]
-                print "starting job for " + str(offset) + "-" + str(offset + count)
+                #print "starting job for " + str(offset) + "-" + str(offset + count)
                 job = GenericLoadJob(req_dict, c)
                 job.start()
                 jobs.append (job)

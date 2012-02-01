@@ -65,7 +65,7 @@ div.chart_container {
 
 <script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
-<script src="{{ STATIC_URL }}js/highstock.src.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/highstock.js" type="text/javascript"></script>
 <script>
 var chart1; // globally available
 $(document).ready(function() {
@@ -275,6 +275,7 @@ $(document).ready(function() {
 		
 		total_data.sort(function (x,y) { x = x[0]; y = y[0]; if (x > y) return 1; else if (x < y) return -1; else return 0;  })
 		description.data[index] = total_data
+		console.log(total_data.length)
 	}
 	
 	function create_line_chart(chart_description) {
@@ -466,7 +467,6 @@ $(document).ready(function() {
 					new_data.push(series[i])					
 			}
 		}
-		console.log(total_data)
 		params.chart.series[0].setData(total_data["active_posts_likes"])
 		params.chart.series[1].setData(total_data["active_posts_reposts"])
 		params.chart.series[2].setData(total_data["active_posts_comments"])
@@ -570,12 +570,13 @@ $(document).ready(function() {
 	// social dynamics
 	var series_opts_soc_dynamics_chart = [
 		{ color: '#ff0000', label: "Likes", stat_id: "likes", index: 0 },
-		{ color: '#ff6600', label: "Posts", stat_id: "comments", index: 1},
+		{ color: '#ff6600', label: "Comments", stat_id: "comments", index: 1},
 		{ color: '#0000ff', label: "Reposts", stat_id: "reposts", index: 2}
 	]
 	
 	var prevT1 = 0
 	var prevT2 = 0
+	var prevContentTypes = ''
 	function refresh_social_dynamics_chart(chart_desc, t1, t2) {
 		if (!t1)
 			t1 = prevT1
@@ -591,8 +592,10 @@ $(document).ready(function() {
 		$.ajax ({
 			url: '/series/group{{ group_id }}/social_dynamics_all/' + content_types + '/' + t1 + '/' + t2 + '/',
 			success: function(data) { 
+				if (content_types != prevContentTypes)
+					description.data = null
+				prevContentTypes = content_types
 				var series_info = description.series_opts
-				description.data = null
 				for (var i = 0, l = series_info.length; i < l; i++) {
 					var series = data.response[series_info[i].stat_id].series
 					if (series[series.length - 1][1] == 0)

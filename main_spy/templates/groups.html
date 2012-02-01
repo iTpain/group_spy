@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html>
 <head>
 <title>Group {{ group_id }} users stats</title>
@@ -117,6 +117,21 @@ div.inline {
 	display: inline;
 }
 
+#methodology-help {
+	font-size:14px;
+	vertical-align:10px;
+	margin-left:5px;
+	cursor:pointer;
+}
+
+#methodology-helper {
+	width: 640px;
+	height: 480px;
+	display: none;
+	background: white;
+	font-family: "Segoe UI";
+}
+
 </style>
 <script src="{{ STATIC_URL }}js/jquery.js"></script>
 <script src="{{ STATIC_URL }}js/jquery.DOMWindow.js"></script>
@@ -138,6 +153,27 @@ div.inline {
 			Update
 		</div>
 	</div>
+	<div id="methodology-helper">
+		<h2>Определения</h2>
+		<p><u>Срок жизни поста</u> - интервал времени от даты публикации поста до времени последнего комментария к посту</p>
+		<p><u>Активный пост в текущий момент времени</u> - пост, со времени последнего комментария к которому не прошло больше недели</p>
+		<p><u>Активный пост в момент времени t</u> - пост, чей интервал жизни содержит момент времени t</p>
+		<p><u>Снимок показателя</u> - значение показателя, зафиксированное системой в определенный момент времени</p>
+		<p><u>Финальное значение показателя</u> - самое последнее значение показателя, зафиксированное системой. Например, 15.08.2011 у поста - 7 лайков, а 16.08.2011 - 10 лайков. Тогда 7 и 10 - это снимки для показателя "лайки". Если сегодня 16.08, то финальное значение - 10 лайков.</p>
+		<h2>Смысловая нагрузка графиков</h2>
+		<h3>График общей информации о пользователях</h3>
+		<p>График отражает снимки пяти показателей</p>
+		<p>Активные пользователи - число юзеров, давших минимум один отклик суммарно по всем активным постам</p>
+		<p>Очень активные пользователи - число юзеров, давших минимум три отклика суммарно по всем активным постам</p>
+		<p></p>
+		<h3>График активности пользователей - 1</h3>
+		<p>Отображает снимки суммарного числа соц. действий по всем активным постам</p>
+		<h3>График активности пользователей - 2</h3>
+		<p>Для каждого момента времени t отображает финальные значения показателей для постов, активных в момент времени t</p>
+		<h3>Графики со стратификацией постов по времени и типу прикрепленного контента</h3>
+		<p>Для графиков со стратификацией по времени значение соц. показателей суммируется для всех постов с датой публикации, попадающей в данную страту (например, с 10 до 11 часов). Показатели считаются для всех постов,
+		опубликованных не позднее одного месяца назад</p>
+	</div>
 	<div class="column" id="group_list_column">
 		<div class="header">
 		Groups currently monitored
@@ -155,10 +191,15 @@ div.inline {
 	</div>
 	<div class="column">
 		<div class="header second-column-header" id="stats-header">
-			Statistics
+			Statistics<span id=methodology-help>[?]</span>
 		</div>
 		<div class="group_asking_to_click second-column-header">Please choose a group from the list</div>
 		<iframe frameborder="no" id="graphFrame" width="820" height="3600"></iframe>
+	</div>
+	<div class="column">
+		<div class="header second-column-header" id="stats-header">
+			Advanced queries
+		</div>
 	</div>
 </div>
 
@@ -250,6 +291,12 @@ div.inline {
 			},
 		});
 	}
+	
+	$("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
+		windowSourceID: "#methodology-helper",
+		width: 640,
+		height: 480
+	})})
 </script>
 </body>
 </html>

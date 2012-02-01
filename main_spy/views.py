@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment
+from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment, LatestPostObservation
 from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from django.shortcuts import render_to_response
@@ -194,14 +194,15 @@ def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, tim
     content_types = [c for c in content_types.split(",") if len(c) > 0]
     quanta = choose_quanta(time_end - time_start)
     series = []
-    
     posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start, date__lte=time_end)
     if len(content_types) > 0:
         attachments = PostAttachment.objects.filter(post__in=[post.id for post in posts], attachment_type__in=content_types)
         posts_ids = {attachment.post_id: True for attachment in attachments}
         posts = [post for post in posts if post.id in posts_ids]
-    stats = {p.id: PostObservation.objects.filter(post=p, statistics=stat_id).latest("date").value for p in posts}
-    
+    latest_observations = LatestPostObservation.objects.filter(statistics=stat_id, post__in=posts)
+    stats = {p.id: 0 for p in posts}
+    for l in latest_observations:
+        stats[l.post_id] = l.value 
     current_time = time_start
     while current_time <= time_end:
         posts_in_quanta = [p for p in posts if p.date <= current_time and p.last_comment_date >= current_time]

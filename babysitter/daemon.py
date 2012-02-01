@@ -33,8 +33,8 @@ def complainAndSleep():
         print "Failed to send an e-mail to admins"
     sleep (settings.CREDENTIALS_POLLING_INTERVAL)
         
-def launch(scanner_class, scan_interval): 
-    print "launching " + str(scanner_class)
+def launch(scanner_classes, scan_intervals): 
+    current_intervals = [0*s for s in scan_intervals]
     while True:
         credentials = get_credentials()
         if credentials == None:
@@ -42,24 +42,29 @@ def launch(scanner_class, scan_interval):
             continue
         
         try:
-            print "useful credentials found: " + str(len(credentials))
-            time_before = datetime.now()
+            print "Useful credentials found: " + str(len(credentials))
             crawler = VKCrawler(credentials)
-            scanner_class().scan(crawler)
-            time_after = datetime.now()
-            seconds = (time_after - time_before).total_seconds()
-            print "Scan completed in " + str(time_after - time_before)
-            print "Next scan scheduled in " + str(timedelta(seconds=max(0, seconds)))
-            if (scan_interval > seconds):
-                sleep(scan_interval - seconds)
-            else:
-                send_mail("Hello, this is the mighty group spy. The scan interval is too short. You should consider increasing it or supplying more credentials via http://vkontakte.ru/app2673575.")
+            for index, time_left in enumerate(current_intervals):
+                if time_left <= 0:
+                    print "Launching " + str(scanner_classes[index])
+                    scan_interval = scan_intervals[index]
+                    current_intervals[index] = scan_interval
+                    time_before = datetime.now()
+                    scanner_classes[index]().scan(crawler)                   
+                    time_after = datetime.now()
+                    seconds_passed = (time_after - time_before).total_seconds()
+                    for i, v in enumerate(current_intervals):
+                        current_intervals[i] = v - seconds_passed
+                    print "Scan completed in " + str(timedelta(seconds=seconds_passed))
+                    print "Current timing: " + str(current_intervals)
+                    print "Next scan scheduled in " + str(timedelta(seconds=max(0, current_intervals[index])))
+                    if (current_intervals[index] < 0):
+                        send_mail("Hello, this is the mighty group spy. The scan interval is too short. You should consider increasing it or supplying more credentials via http://vkontakte.ru/app2673575.")
+            min_time = min(current_intervals)
+            if min_time > 0:
+                print "sleeping for " + str(timedelta(seconds=min_time))
+                sleep(min_time)
         except LogError:
             complainAndSleep()
             continue
-        
-def multilaunch (scanner_classes):
-    for sc in scanner_classes:
-        thread = Thread(None, launch, None, sc)
-        thread.start()
         

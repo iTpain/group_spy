@@ -35,6 +35,14 @@ def get_vk_crawler():
     else:
         return VKCrawler(credentials)
 
+def list_to_quantity_dict(qlist):
+    qdict = {}
+    for l in qlist:
+        if not l in qdict:
+            qdict[l] = 0
+        qdict[l] += 1
+    return qdict
+
 def sqlite_dump_to_mysql_dump():
     for line in fileinput.input():
         process = False

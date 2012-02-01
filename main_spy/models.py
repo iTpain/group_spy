@@ -18,7 +18,7 @@ class Post(models.Model):
     group = models.ForeignKey(Group)
     
     def __str__(self):
-        return "<" + str(self.pid) + ">"
+        return "<" + str(self.pid) + " closed=" + str(self.closed) + ">"
     
 class PostAttachment(models.Model):
     post = models.ForeignKey(Post, null=True)
@@ -33,8 +33,36 @@ class PostObservation(models.Model):
     post = models.ForeignKey(Post, null=True, db_index=True)
     statistics = models.CharField(max_length=32, db_index=True)
     
+class LatestPostObservation(models.Model):
+    value = models.IntegerField()
+    post = models.ForeignKey(Post, null=True, db_index=True)
+    statistics = models.CharField(max_length=32, db_index=True)
+    
 class GroupObservation(models.Model):
     date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)
     value = models.IntegerField()
     group = models.ForeignKey(Group)
     statistics = models.CharField(max_length=32, db_index=True)
+    
+class DemogeoGroupObservation(models.Model):
+    date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)
+    group = models.ForeignKey(Group)
+    json = models.TextField()
+    whole_group = models.BooleanField()
+    
+class VKUser(models.Model):
+    vkid = models.BigIntegerField(db_index=True)
+    first_name = models.CharField(max_length=64)
+    last_name = models.CharField(max_length=64)
+    age = models.IntegerField(db_index=True)
+    education = models.IntegerField()
+    is_man = models.BooleanField()
+    city_alias = models.CharField(max_length=64)
+    last_scanned = models.DateTimeField(db_index=True)
+    
+class VKUserSocialAction(models.Model):
+    post = models.ForeignKey(Post)
+    user = models.ForeignKey(VKUser)
+    likes = models.IntegerField()
+    comments = models.IntegerField()
+    
