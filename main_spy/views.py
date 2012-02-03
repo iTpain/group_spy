@@ -191,7 +191,7 @@ def get_series_for_posts(request, group_id, stat_id, content_types, time_start, 
 def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end):
     time_start = datetime.fromtimestamp(int(time_start))
     time_end = datetime.fromtimestamp(int(time_end))
-    content_types = [c for c in content_types.split(",") if len(c) > 0 and c in ['photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']]
+    content_types = [c for c in content_types.split(",") if len(c) > 0 and c in ['no_attachment', 'photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']]
     quanta = choose_quanta(time_end - time_start)
     series = []
     posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start, date__lte=time_end)

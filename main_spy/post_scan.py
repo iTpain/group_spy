@@ -41,11 +41,17 @@ class PostsScanner(object):
                 self.create_attachments_for_post (p, new_post)
                 
     def create_attachments_for_post(self, vk_data, post):
+        has_attachments = False
         if 'attachments' in vk_data:
             for attachment in vk_data['attachments']:
                 db_attachment = PostAttachment(post=post, attachment_type=attachment['type'])
                 db_attachment.save()
+                has_attachments = True
                 print "Attachment " + attachment["type"] + " added to post " + str(post.pid)
+        if not has_attachments:
+            db_attachment = PostAttachment(post=post, attachment_type='no_attachment')            
+            db_attachment.save()   
+            print "NO attachment added to post " + str(post.pid)         
     
     def update_group_posts(self, crawler, gid):
         active_posts = list(Post.objects.filter(closed=False, group=gid))
