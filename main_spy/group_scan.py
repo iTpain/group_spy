@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group, Post, PostObservation, DemogeoGroupObservation
+from group_spy.main_spy.models import GroupObservation, Group, Post, DemogeoGroupObservation, LatestPostObservation
 from time import gmtime, strftime
 from group_spy.logger.error import LogError
 from datetime import datetime
@@ -10,8 +10,8 @@ def compute_group_activity(active_posts):
     for post in active_posts:
         for k, v in stats.iteritems():
             try:
-                value = PostObservation.objects.filter(post=post, statistics=k).latest("date").value
-            except PostObservation.DoesNotExist:
+                value = LatestPostObservation.objects.filter(post=post, statistics=k)[0].value
+            except LatestPostObservation.DoesNotExist:
                 value = 0
             stats[k] = v + value 
     mapped_stats = {}
@@ -93,6 +93,21 @@ class GroupScanner(object):
         observation = DemogeoGroupObservation(group_id=gid, json=json.dumps({'demo': demo_json, 'geo': geo_json}), whole_group=whole_group)
         observation.save()
     
+    def get_optimal_cities_set(self, cities, min_threshold, max_threshold, step, crit_value):
+        threshold = max_threshold
+        while True:
+            major_cities = [c for c in cities if c[1] > threshold and len(c[0]) > 0]
+            total_major_sum = 0
+            for c in major_cities:
+                total_major_sum += c[1]
+            if total_major_sum < crit_value and threshold > min_threshold:
+                threshold -= step
+                continue
+            else:
+                major_cities.append(['other', 1 - total_major_sum])
+                major_cities.sort(key=lambda c: c[1])
+                return major_cities
+    
     def analyze_geo(self, profiles, crawler):
         cids_list = [p['city'] for p in profiles if 'city' in p]
         cids_dict = {}
@@ -105,20 +120,13 @@ class GroupScanner(object):
         for alias_info in crawler.get_cities([c for c in cids_dict.keys()]):
             alias_dict[alias_info['cid']] = alias_info['name']
         sum = 0
-        cities = cids_dict.items()
+        cities = [c for c in cids_dict.items() if c[0] != '0'] 
         for c in cities:
             sum += c[1]
         for index, c in enumerate(cities):
-            cities[index] = [c[0], float(c[1]) / sum]
-        threshold = 0.03
-        cities.sort(key=lambda c: c[1])
-        major_cities = [c for c in cities if c[1] > threshold]
-        total_major_sum = 0
-        for c in major_cities:
-            if c[0] in alias_dict:
-                c[0] = alias_dict[c[0]]
-            total_major_sum += c[1]
-        major_cities.append(['other', 1 - total_major_sum])
+            cities[index] = [alias_dict[c[0]], float(c[1]) / sum]
+        print cities
+        major_cities = self.get_optimal_cities_set(cities, 0.01, 0.02, 0.01, 0.8)
         print major_cities
         return major_cities        
     
@@ -135,14 +143,15 @@ class GroupScanner(object):
             return 'undefined'
         now = datetime.now().year
         age = now - year
-        age_stratas = [[0, 11], [12, 15], [16, 18], [19, 21], [22, 24], [25, 27], [28, 30], [31, 35], [36, 45], [46, 200000]]
+        profile['computed_age'] = age
+        age_stratas = [[0, 11], [12, 15], [16, 18], [19, 21], [22, 24], [25, 27], [28, 30], [31, 35], [36, 45], [46, 120]]
         for a in age_stratas:
             if age >= a[0] and age <= a[1]:
                 return str(a[0]) + '-' + str(a[1])
         return 'undefined'
     
     def get_education_strata(self, profile):
-        if 'university' in profile:
+        if 'university' in profile and not ('computed_age' in profile and profile['computed_age'] < 18):
             return 'higher'
         else:
             return 'other'
@@ -157,6 +166,8 @@ class GroupScanner(object):
         stratas = {}
         for p in profiles:
             age = self.get_age_strata(p)
+            if age == 'undefined':
+                continue
             sex = self.get_sex_strata(p)
             education = self.get_education_strata(p)
             final_strata = age + ":" + sex + ":" + education

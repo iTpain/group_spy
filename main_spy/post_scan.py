@@ -97,7 +97,7 @@ class PostsScanner(object):
         min_time_comment = 10000000000
         max_time_comment = time.mktime(post.last_comment_date.timetuple())
         for c in comments:
-            print "comment found, date: " + str(datetime.fromtimestamp(c['date']))
+            #print "comment found, date: " + str(datetime.fromtimestamp(c['date']))
             if c['date'] > max_time_comment:
                 max_time_comment = c['date']
             if c['date'] < min_time_comment:

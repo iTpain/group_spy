@@ -7,8 +7,6 @@ from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 
-from threading import Thread
-
 COMMASPACE = ', '
 
 def send_mail(text):
@@ -64,6 +62,8 @@ def launch(scanner_classes, scan_intervals):
             if min_time > 0:
                 print "sleeping for " + str(timedelta(seconds=min_time))
                 sleep(min_time)
+                for i, v in enumerate(current_intervals):
+                    current_intervals[i] = v - min_time
         except LogError:
             complainAndSleep()
             continue

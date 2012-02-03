@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment, LatestPostObservation
+from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation
 from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from django.shortcuts import render_to_response
@@ -191,7 +191,7 @@ def get_series_for_posts(request, group_id, stat_id, content_types, time_start, 
 def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end):
     time_start = datetime.fromtimestamp(int(time_start))
     time_end = datetime.fromtimestamp(int(time_end))
-    content_types = [c for c in content_types.split(",") if len(c) > 0]
+    content_types = [c for c in content_types.split(",") if len(c) > 0 and c in ['photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']]
     quanta = choose_quanta(time_end - time_start)
     series = []
     posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start, date__lte=time_end)
@@ -224,8 +224,6 @@ def get_posts_in_period(group_id, time_start, time_end):
     return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start))
 
 def intraday_stratify(posts):
-    print len(posts)
-    
     stratas = {k: {'posts': [], 'stats': {}} for k in xrange(24)}
     for p in posts:
         stratas[p.date.hour]['posts'].append(p)
@@ -276,7 +274,7 @@ def get_social_activity_for_content_stratas(request, group_id, time_start, time_
     
 @json_response
 def get_group_current_stats(request, group_id):
-    stats = ["total_users", "faceless_users", "banned_users", "active_posts_count", "active_posts_likes", "active_posts_comments", "active_posts_reposts"]
+    stats = ["total_users", "faceless_users", "banned_users", "active_posts_count", "active_posts_likes", "active_posts_comments", "active_posts_reposts", "users_1", "users_3"]
     stats_data = {}
     now = datetime.now()
     for s in stats:
@@ -287,6 +285,22 @@ def get_group_current_stats(request, group_id):
         stats_data[s]['week_ago'] = get_approximation_for_stat(objects, now - timedelta(days=7), timedelta(hours=12))
         stats_data[s]['month_ago'] = get_approximation_for_stat(objects, now - timedelta(days=30), timedelta(days=1))
     return stats_data
+
+def get_demogeo(group_id, time, whole_group):
+    try:
+        value = DemogeoGroupObservation.objects.filter(group=group_id, whole_group=whole_group, date__lte=time).latest("date").json
+        return json.loads(value)
+    except DemogeoGroupObservation.DoesNotExist:
+        try:
+            value = DemogeoGroupObservation.objects.filter(group=group_id, whole_group=whole_group, date__gte=time)[0].json
+            return json.loads(value)
+        except DemogeoGroupObservation.DoesNotExist:
+            return None
+
+@json_response
+def get_demogeo_snapshot(request, group_id, time):
+    time = datetime.fromtimestamp(int(time))
+    return {'whole_group': get_demogeo(group_id, time, True), 'active_users': get_demogeo(group_id, time, False)}
 
 @json_response
 def update_group_info(request, group_id):

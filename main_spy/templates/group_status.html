@@ -27,6 +27,7 @@ span.emphasize {
 	font-family: 'Segoe UI';
 	width: 800px;
 	font-size:14px;
+	margin-bottom:90px;
 }
 
 div.snapshot-cell {
@@ -44,6 +45,15 @@ span.snapshot-cell-value {
 	margin-left:10px;
 	margin-bottom: 15px;
 	margin-top:-9px;
+	color:#0066ff
+}
+
+#demogeo_snapshot_header {
+	font-size: 20px;
+	margin-left:10px;
+	margin-bottom: 15px;
+	margin-top:5px;
+	color:#0066ff
 }
 
 span.snapshot-cell-additional-info {
@@ -61,13 +71,17 @@ div.chart_container {
 	height: 500px;
 }
 
+#demogeo-container {
+	width: 800px;
+	height: 800px;
+}
+
 </style>
 
 <script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
 <script src="{{ STATIC_URL }}js/highstock.js" type="text/javascript"></script>
 <script>
-var chart1; // globally available
 $(document).ready(function() {
 	date_now = Math.round (new Date().getTime() / 1000)
 	back_for_month = date_now - 365 * 24 * 60 * 60
@@ -76,7 +90,7 @@ $(document).ready(function() {
 		if ('controls' in chart_description) {
 			var controls = chart_description.controls
 			if (controls.aggregate) {
-				chart_description.controls.aggregate = new Aggregator($("#" + chart_description.container)[0].parentNode, chart_description)
+				chart_description.controls.aggregate = new OptionsList($("#" + chart_description.container)[0].parentNode, [{label: 'Сумму', data: 'sum'}, {label: 'Среднее', data: 'avg'}], function (v) {chart_description.aggregation_changed(v)}, {header: "Считать: "}, 'margin-left:30px;')
 			}
 		}	
 	}
@@ -98,8 +112,7 @@ $(document).ready(function() {
 				this.content.appendChild(box)
 				this.boxes.push(box.childNodes[1])
 			}
-		},
-		
+		},		
 		get_selected: function() {
 			selected = []
 			for (var i = 0, l = this.boxes.length; i < l; i++) {
@@ -110,87 +123,95 @@ $(document).ready(function() {
 		}
 	}
 	
-	function Aggregator(div, chart_description) {
-		this.init(div, chart_description)
+	function OptionsList(div, options, callback, params, style) {
+		this.init(div, options, callback, params, style || '')
 		div.appendChild(this.content)
 	}
 	
-	Aggregator.prototype = {
-		init: function (div, chart_description) {
-			this.content = $("<div style='margin-left: 30px;'>Aggregation method:</div>")[0]
-			this.average_btn = $("<div style='display: inline; margin-left: 15px; cursor: pointer;'>Average</div>")[0]
-			this.sum_btn = $("<div style='display: inline; margin-left: 15px; cursor: pointer; color: #ff6600;'>Sum</div>")[0]
-			this.content.appendChild(this.sum_btn)
-			this.content.appendChild(this.average_btn)
-			this.selected = this.sum_btn
-			this.chart_description = chart_description
-			
-			$(this.average_btn).bind('click', this.onclick(this))
-			$(this.sum_btn).bind('click', this.onclick(this))
-		},
-		
+	OptionsList.prototype = {
+		init: function (div, options, callback, params, style) {
+			this.content = $("<div style='" + style + "'>" + params.header + "</div>")[0]
+			this.callback = callback
+			for (var i = 0, l = options.length; i < l; i++) {
+				var mleft = i == 0 ? '10' : '15'
+				var btn = $("<div style='display: inline; margin-left: " + mleft + "px; cursor: pointer;'>" + options[i].label + "</div>")[0]
+				if (i == 0) {
+					this.selected = btn
+					btn.style.color = "#ff6600"
+				}
+				this.content.appendChild(btn)
+				btn.attachedData = options[i].data
+				$(btn).bind('click', this.onclick(this))
+			}
+		},		
 		onclick: function (that) {
 			return function (ev) {
 				if (that.selected != this) {
 					that.selected.style.color = "#000000"
 					that.selected = this
 					that.selected.style.color = "#ff6600"
-					that.chart_description.aggregation_changed(that.get_selected())
+					
+					that.callback(that.get_selected())
 				}
 			}
 		},
-
 		get_selected: function () {
-			if (this.selected == this.average_btn)
-				return 'avg'
-			else
-				return 'sum'
-		}
-	
+			return this.selected.attachedData
+		}	
 	}
 
 	// snapshot
 	var snapshot_decoration = {
 		"banned_users": {
-			title: "Banned users",
+			title: "Забаненные участники",
 			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.banned_users.latest / data.total_users.latest).toPrecision(2)) + "%)</span>"},
 			reverse_color_delta: true
 		},
 		"faceless_users": {
-			title: "Faceless users",
+			title: "Участники без аватара",
 			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + ((100 * data.faceless_users.latest / data.total_users.latest).toPrecision(2)) + "%)</span>"},
 			reverse_color_delta: true
 		},
 		"total_users": {
-			title: "Total users",
-			reverse_color_delta: false
-		},
-		"active_posts_count": {
-			title: "Active posts count",
+			title: "Всего участников",
 			reverse_color_delta: false
 		},
 		"active_posts_likes": {
-			title: "Total likes (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_likes.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			title: "Лайки (всего по а.п.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_likes.latest / data.active_posts_count.latest)) + " в ср.)</span>"},
 			reverse_color_delta: false
 		},
 		"active_posts_reposts": {
-			title: "Total reposts (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_reposts.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			title: "Репосты (всего по а.п.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_reposts.latest / data.active_posts_count.latest)) + " в ср.)</span>"},
 			reverse_color_delta: false
 		},
 		"active_posts_comments": {
-			title: "Total comments (a.p.)",
-			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_comments.latest / data.active_posts_count.latest)) + " avg)</span>"},
+			title: "Комментарии (всего по а.п.)",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(data.active_posts_comments.latest / data.active_posts_count.latest)) + " в ср.)</span>"},
 			reverse_color_delta: false
-		},			
+		},	
+		"active_posts_count": {
+			title: "Активные посты",
+			reverse_color_delta: false
+		},
+		"users_1": {
+			title: "Активные пользователи",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(100 * data.users_1.latest / (data.total_users.latest - data.banned_users.latest))) + "%)</span>"},
+			reverse_color_delta: false
+		},	
+		"users_3": {
+			title: "Ядро аудитории",
+			addition: function (data) {return " <span class='snapshot-cell-additional-info'>(" + (Math.round(100 * data.users_3.latest / (data.total_users.latest - data.banned_users.latest))) + "%)</span>"},
+			reverse_color_delta: false
+		}				
 	};
 	$.ajax ({		
 		url: '/group{{ group_id }}/snapshot/',
 		success: function(data) {
 			data = data.response
 			div = $("#group_stats_snapshot")[0]
-			var order = ["total_users", "faceless_users", "banned_users", "BREAK", "active_posts_count", "active_posts_likes", "active_posts_reposts", "active_posts_comments"]
+			var order = ["total_users", "faceless_users", "banned_users", "BREAK", "active_posts_likes", "active_posts_reposts", "active_posts_comments", "active_posts_count", "users_1", "users_3"]
 			current_div = $("<div style='clear:both'></div>")[0]
 			div.appendChild (current_div)
 			for (var i = 0, l = order.length; i < l; i++) {
@@ -225,9 +246,9 @@ $(document).ready(function() {
 						}
 						return label + ": " + percentage + "  "
 					}
-					title += create_title_part("Day ago", data[key].latest, data[key].day_ago)
-					title += create_title_part("Week ago", data[key].latest, data[key].week_ago)
-					title += create_title_part("Month ago", data[key].latest, data[key].month_ago)
+					title += create_title_part("День назад", data[key].latest, data[key].day_ago)
+					title += create_title_part("Неделю назад", data[key].latest, data[key].week_ago)
+					title += create_title_part("Месяц назад", data[key].latest, data[key].month_ago)
 					
 					cell.innerHTML = dec.title + ": <span title='" + title + "' class='snapshot-cell-value' style='color:" + color + "'>" + data[key].latest + "</span>"
 					if (dec.addition) {
@@ -318,7 +339,7 @@ $(document).ready(function() {
 				text: chart_description.title,
 				style: {
 					"font-family": "Segoe UI",
-					"color": "#000000",
+					"color": "#0066ff",
 					"font-size": "20px",
 				},
 				align: "left",
@@ -400,23 +421,23 @@ $(document).ready(function() {
 	}
 	
 	series_opts_group_users_chart = [
-		{ color: '#0000ff', label: "Total users", stat_id: "total_users", index: 0},
-		{ color: '#ff6600', label: "Faceless users", stat_id: "faceless_users", index: 1},
-		{ color: '#ff0000', label: "Banned users", stat_id: "banned_users", index: 2},
-		{ color: '#44aa44', label: "Active users", stat_id: "users_1", index: 3},
-		{ color: '#22ff22', label: "Very active users", stat_id: "users_3", index: 4}
+		{ color: '#0000ff', label: "Всего участников", stat_id: "total_users", index: 0},
+		{ color: '#ff6600', label: "Без аватара", stat_id: "faceless_users", index: 1},
+		{ color: '#ff0000', label: "Забаненные", stat_id: "banned_users", index: 2},
+		{ color: '#44aa44', label: "Активные", stat_id: "users_1", index: 3},
+		{ color: '#22ff22', label: "Очень активные", stat_id: "users_3", index: 4}
 	]
 	
 	series_opts_group_activity_chart = [
-		{ color: '#00ff00', label: "Active posts count", stat_id: "active_posts_count", index: 0},
-		{ color: '#ff0000', label: "Total likes (active posts)", stat_id: "active_posts_likes", index: 1 },
-		{ color: '#ff6600', label: "Total comments (active posts)", stat_id: "active_posts_comments", index: 2},
-		{ color: '#0000ff', label: "Total reposts (active posts)", stat_id: "active_posts_reposts", index: 3}
+		{ color: '#00ff00', label: "Всего активных постов", stat_id: "active_posts_count", index: 0},
+		{ color: '#ff0000', label: "Всего лайков для а.п.", stat_id: "active_posts_likes", index: 1 },
+		{ color: '#ff6600', label: "Всего комментариев для а.п.", stat_id: "active_posts_comments", index: 2},
+		{ color: '#0000ff', label: "Всего репостов для а.п.", stat_id: "active_posts_reposts", index: 3}
 	]
 
 	group_charts = [
-		{ title: 'General users stats', series_opts: series_opts_group_users_chart, container: "group_users_chart", refresh: refresh_userstat_chart},
-		{ title: 'General activity stats', series_opts: series_opts_group_activity_chart, container: "group_activity_chart", refresh: refresh_socialstat_chart }
+		{ title: 'Общая статистика по участникам', series_opts: series_opts_group_users_chart, container: "group_users_chart", refresh: refresh_userstat_chart},
+		{ title: 'Снимки активности участников', series_opts: series_opts_group_activity_chart, container: "group_activity_chart", refresh: refresh_socialstat_chart }
 	]
 	
 	for (var i = 0, l = group_charts.length; i < l; i++) {
@@ -428,7 +449,7 @@ $(document).ready(function() {
 	strata_charts = [
 		{
 			container: 'social_activity_hourly_stratified',
-			title: 'Social activity by hours',
+			title: 'Внутридневная результативность постов',
 			strata_type: 'intraday_stratify',
 			strata_labels: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
 			key_func: function (key) { return parseInt(key) }, 
@@ -436,7 +457,7 @@ $(document).ready(function() {
 		},
 		{
 			container: 'social_activity_daily_stratified',
-			title: 'Social activity by days of week',
+			title: 'Внутринедельная результативность постов',
 			strata_type: 'intraweek_stratify',
 			strata_labels: [0, 1, 2, 3, 4, 5, 6],
 			key_func: function (key) { return parseInt(key) }, 
@@ -444,7 +465,7 @@ $(document).ready(function() {
 		},
 		{
 			container: 'social_activity_content_stratified',
-			title: 'Social activity by content type',
+			title: 'Результативность постов по типу приложений',
 			strata_type: 'content_stratify',
 			strata_labels: ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video'],
 			key_func: function (key) { return key }, 
@@ -498,7 +519,7 @@ $(document).ready(function() {
 				text: params.title,
 				style: {
 					"font-family": "Segoe UI",
-					"color": "#000000",
+					"color": "#0066ff",
 					"font-size": "20px",
 				},
 				align: "left",
@@ -520,9 +541,9 @@ $(document).ready(function() {
 				}
 			}
 		});
-		schart.addSeries({name: "Likes"})
-		schart.addSeries({name: "Reposts"})
-		schart.addSeries({name: "Comments"})
+		schart.addSeries({name: "лайки"})
+		schart.addSeries({name: "репосты"})
+		schart.addSeries({name: "комментарии"})
 		params.chart = schart
 		create_controls(params)
 	}
@@ -569,9 +590,9 @@ $(document).ready(function() {
 	
 	// social dynamics
 	var series_opts_soc_dynamics_chart = [
-		{ color: '#ff0000', label: "Likes", stat_id: "likes", index: 0 },
-		{ color: '#ff6600', label: "Comments", stat_id: "comments", index: 1},
-		{ color: '#0000ff', label: "Reposts", stat_id: "reposts", index: 2}
+		{ color: '#ff0000', label: "лайки", stat_id: "likes", index: 0 },
+		{ color: '#ff6600', label: "комментарии", stat_id: "comments", index: 1},
+		{ color: '#0000ff', label: "репосты", stat_id: "reposts", index: 2}
 	]
 	
 	var prevT1 = 0
@@ -589,6 +610,8 @@ $(document).ready(function() {
 	
 	function make_social_dynamics_request(t1, t2, description) {
 		content_types = filters_group.get_selected().join(",")
+		if (content_types.length == 0)
+			content_types = 'all'
 		$.ajax ({
 			url: '/series/group{{ group_id }}/social_dynamics_all/' + content_types + '/' + t1 + '/' + t2 + '/',
 			success: function(data) { 
@@ -607,7 +630,7 @@ $(document).ready(function() {
 		});	
 	}
 	
-	var soc_dynamics_chart_desc = { title: 'Social activity dynamics', series_opts: series_opts_soc_dynamics_chart, container: "group_social_activity_dynamics", refresh: refresh_social_dynamics_chart }
+	var soc_dynamics_chart_desc = { title: 'Историческая статистика результативности постов', series_opts: series_opts_soc_dynamics_chart, container: "group_social_activity_dynamics", refresh: refresh_social_dynamics_chart }
 	create_line_chart(soc_dynamics_chart_desc, refresh_social_dynamics_chart)
 	var content_types = ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video']
 	var content_types_labels = ['Приложение', "Аудио", "Документ", "Граффити", "Ссылка", "Без вложений", "Заметка", "Страница", "Фото", "Опрос", "Фото(к)", "Видео"] 
@@ -617,17 +640,233 @@ $(document).ready(function() {
 	}
 	var filters_group = new CheckboxGroup($("#group_social_activity_dynamics")[0], content_filters, soc_dynamics_chart_desc)
 	refresh_social_dynamics_chart(soc_dynamics_chart_desc, back_for_month, date_now)
+	
+	// demogeo snapshot
+	function arrays_to_percents() {
+		var l = arguments.length
+		for (var i = 0; i < l; i++) {
+			var arr = arguments[i]
+			for (var j = 0, lj = arr.length; j < lj; j++)
+				arr[j][1] *= 100
+		}
+	}
+	
+	function absolute_to_percents_in_array(arr) {
+		var sum = 0
+		for (var i = 0, l = arr.length; i < l; i++) {
+			sum += arr[i][1]
+		}
+		for (i = 0; i < l; i++) {
+			arr[i][1] *= 100 / sum
+		}
+	}
+	
+	function create_demo_stratas(data, params, filters) {
+		function cannot_distinguish(p1, p2) {
+			for (var e in p1) {
+				var stratas = params[e]
+				for (var i = 0, l = stratas.length; i < l; i++) {
+					//console.log(stratas[i].indexOf(p1[e]), stratas[i].indexOf(p2[e]))
+					var s1 = stratas[i].indexOf(p1[e]) + 1
+					var s2 = stratas[i].indexOf(p2[e]) + 1
+					if ((s1 * s2 == 0) && !(s1 == 0 && s2 == 0)) {
+						return false
+					}
+				}
+			}
+			return true
+		}		
+		
+		function create_name(props) {
+			var order = ['sex', 'age', 'education']
+			var name_pieces = []
+			for (var p in params) {
+				if (params[p].length == 0)
+					continue
+				var stratas = params[p]
+				for (var i = 0, l = stratas.length; i < l; i++) {
+					if (stratas[i].indexOf(props[p]) > -1) {
+						name_pieces.push([p, props[p]])
+						break
+					}
+				}
+			}
+			name_pieces.sort(function (n1, n2) {
+				n1 = order.indexOf(n1[0])
+				n2 = order.indexOf(n2[0])
+				if (n1 > n2) return 1
+				else if (n1 < n2) return -1
+				else return 0
+			})
+			name_pieces = name_pieces.map(function(el) { return el[1] })
+			return name_pieces.join(" ")
+		}
+		
+		var groups = []
+		outer: for (var e in data) {
+			var pieces = e.split(":")
+			var props = {
+				age: pieces[0],
+				sex: pieces[1],
+				education: pieces[2]
+			}
+			if (filters != null) {
+				for (var f in filters) {
+					if (filters[f].indexOf(props[f]) < 0) {
+						continue outer
+					}
+				}
+			}
+			var found_same = false
+			for (var i = 0, l = groups.length; i < l; i++) {
+				if (cannot_distinguish(groups[i][0], props)) {
+					groups[i][1] += data[e]
+					found_same = true
+					break
+				}
+			}
+			if (!found_same) {
+				groups.push([props, data[e]])
+			}
+		}
+		
+		for (i = 0, l = groups.length; i < l; i++) {
+			groups[i][0] = create_name(groups[i][0])
+		}
+		groups.sort(function(g1, g2) {
+			g1 = g1[0]
+			g2 = g2[0]
+			if (g1 > g2) return 1
+			else if (g1 < g2) return -1
+			else return 0
+		})
+		
+		return groups
+	}
+	
+	var geo_chart_desc = {container: 'geo_snapshot_chart', width: 400, height: 400, title: 'Распределение участников по городам', size: 150}
+	
+	var ages_stratas = [['0-11'], ['12-15'], ['16-18'], ['19-21'], ['22-24'], ['25-27'], ['28-30'], ['31-35'], ['36-45'], ['46-120']]
+	var demos = [
+		[{age: [], education: [], sex: [['man'], ['woman']]}, null],
+		[{age: [], education: [['higher'], ['other']], sex: []}, null],
+		[{age: ages_stratas, education: [], sex: []}, null],
+		[{age: ages_stratas, education: [], sex: []}, {sex: ['man']}],
+		[{age: ages_stratas, education: [], sex: []}, {sex: ['woman']}]
+	]
+	
+	var demo_descriptions = [
+		{container: 'sex_snapshot_chart', width: 400, height: 400, title: 'Распределение по полу', size: 200},
+		{container: 'education_snapshot_chart', width: 400, height: 400, title: 'Распределение по образованию', size: 200},
+		{container: 'age_snapshot_chart', width: 400, height: 400, title: 'Распределение по возрасту', size: 200},
+		{container: 'man_age_snapshot_chart', width: 400, height: 400, title: 'Распределение мужчин по возрасту', size: 200},
+		{container: 'woman_age_snapshot_chart', width: 400, height: 400, title: 'Распределение женщин по возрасту', size: 200}
+	]
+	
+	$.ajax({
+		url: '/group{{group_id}}/demogeo_snapshot/' + date_now,
+		success: function (data) {
+			data = data.response			
+			arrays_to_percents(data.whole_group.geo, data.active_users.geo)
+			geo_chart_desc.initial_data = [data.whole_group.geo, data.active_users.geo]
+			
+			var demo_data = [data.whole_group.demo, data.active_users.demo]
+			for (var i = 0, l = demo_descriptions.length; i < l; i++) {
+				demo_descriptions[i].initial_data = demo_data
+			}
+			draw_demogeo_charts(0)
+		}
+	});
+	
+	function draw_demogeo_charts(data_index) {
+		geo_chart_desc.data = geo_chart_desc.initial_data[data_index]
+		if (geo_chart_desc.chart)
+			geo_chart_desc.chart.destroy()
+		create_pie_chart(geo_chart_desc)
+		
+		for (var i = 0, l = demo_descriptions.length; i < l; i++) {
+			var series = create_demo_stratas(demo_descriptions[i].initial_data[data_index], demos[i][0], demos[i][1])
+			demo_descriptions[i].data = series
+			absolute_to_percents_in_array(series)
+			if (demo_descriptions[i].chart)
+				demo_descriptions[i].chart.destroy()
+			create_pie_chart(demo_descriptions[i])
+		}	
+	}
+	
+	var demogeoSwitcher = new OptionsList($("#demogeo_switcher")[0], [{label: 'всем участникам', data: 0}, {label: 'активной аудитории', data: 1}], function (v) { draw_demogeo_charts(v) }, {header: "Отображать данные по: "}, 'margin-left:12px')
+	
+	function create_pie_chart(chart_desc) {
+		var schart = new Highcharts.Chart({
+			chart: {
+				renderTo: chart_desc.container,
+				defaultSeriesType: 'pie',
+				width: chart_desc.width,
+				height: chart_desc.height
+			},
+			title: {
+				text: chart_desc.title,
+				style: {
+					"font-family": "Segoe UI",
+					"color": "#0066ff",
+					"font-size": "14px",
+				},
+				align: "left",
+				x: 0,
+				margin: 0
+			},
+			plotOptions: {
+				pie: {
+					size: chart_desc.size
+				}
+			},
+			series: [{
+				data: chart_desc.data
+			}]
+		});	
+		chart_desc.chart = schart
+	}
 });
 </script>
 </head>
 <body>
-<div id="group_stats_snapshot_header">Stats snapshot</div>
+<div id="group_stats_snapshot_header">Значения основных показателей сейчас</div>
 <div id="group_stats_snapshot"></div>
-<div id="group_users_chart" class="chart_container" style="margin-top: 50px; clear: both"></div>
+<div id="group_users_chart" class="chart_container" style="clear: both"></div>
 <div class="chart_container"><div id="group_activity_chart"></div></div>
 <div class="chart_container"><div id="group_social_activity_dynamics"></div></div>
 <div class="chart_container"><div id="social_activity_hourly_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_daily_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_content_stratified"></div></div>
+<div id="demogeo_container">
+<div id="demogeo_snapshot_header">Демографическая и географическая статистики</div>
+<div id="demogeo_switcher"></div>
+<table>
+	<tr>
+		<td>
+			<div id="geo_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+		<td>
+			<div id="age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<div id="man_age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+		<td>
+			<div id="woman_age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<div id="sex_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+		<td>
+			<div id="education_snapshot_chart" style="width: 400px; height: 400px;"></div>
+		</td>
+	</tr>
+</table>
+</div>
 </body>
 </html>

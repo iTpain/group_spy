@@ -1,5 +1,3 @@
-# малолеток с высшим - нахуй, прочекать перформанс стратифая на адидас ориджиналс, диаграмки для демогео, прочекать пустой город в демогео, адаптивный трешхолд в городах
-
 from django.core.management import setup_environ
 import imp
 
@@ -11,16 +9,19 @@ setup_environ(settings)
 from babysitter.daemon import launch
 from group_spy.main_spy.group_scan import GroupScanner
 from group_spy.main_spy.post_scan import PostsScanner
-from group_spy.main_spy.views import get_series_for_posts, get_social_activity_for_intraday_stratas, get_all_stats_series_for_posts
+from group_spy.main_spy.views import get_series_for_posts, get_social_activity_for_intraday_stratas, get_all_stats_series_for_posts, get_social_activity_for_intraweek_stratas
 from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment
 from datetime import datetime
 
 
-past = datetime.now()
+#past = datetime.now()
 #http://localhost:8000/series/group13643401/social_dynamics_all//1296385474/1327921474/
 #get_all_stats_series_for_posts(None, '13643401', '', '1296385474', '1327921474')
+#http://localhost:8000/group21977113/intraday_stratify/1325585275/1328177275/
+#get_social_activity_for_intraday_stratas(None, '21977113', '1325585275', '1328177275')
 #print "oook"
 #detmir - 31769636 adidas sport - 13643401
+#print datetime.now() - past
 #exit()
 
 #http://localhost:8000/series/group21977113/social_dynamics//reposts/1326791430/1327557922/
