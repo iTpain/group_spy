@@ -3,11 +3,15 @@ from group_spy.utils.vk import VKRequest
 from group_spy.logger.error import LogError
 from threading import Thread
 
+class OutOfCredentialsError(BaseException):
+    pass
+
 class GenericLoadJob(Thread):
     
     _req_dict = None
     _credentials = None
     response = None
+    has_run = False
     error = None
     
     def __init__(self, req_dict, credentials):
@@ -42,16 +46,18 @@ class VKCrawler(object):
     
     def __init__(self, credentials_list):
         self._credentials_list = credentials_list
-        self._request_maker = VKRequest (credentials_list[0])
+        self._request_maker = VKRequest(credentials_list[0])
     
     def test_current_credentials(self):
-        try:
-            generator = self.get_groups([1])
-            for g in generator:
-                print g
-            return True
-        except LogError:
-            return False
+        good_credentials = []
+        for c in self._credentials_list:
+            request = VKRequest(c)
+            try:
+                request.blocking_request({'method': 'getProfiles', 'uids': '1'})
+                good_credentials.append(c)
+            except LogError:
+                pass
+        return good_credentials
     
     def get_profiles(self, uids):
         return (user for user in self.set_generator({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city'}, 'uids', uids))
@@ -60,37 +66,12 @@ class VKCrawler(object):
         return (city for city in self.set_generator({'method': 'places.getCityById'}, 'cids', cids))
                
     def get_groups(self, gids):
-        return (group for group in self.set_generator({'method': 'groups.getById'}, 'gids', gids))
-                
-    def set_generator(self, params, key, ids):
-        workers_count = len(self._credentials_list)
-        chunk_per_load = self._profiles_count_per_load * workers_count
-        for i in range(0, int(ceil((len(ids) + 0.0) / chunk_per_load))):
-            jobs = []
-            for index, c in enumerate(self._credentials_list):
-                req_dict = {key: ",".join ([str(p) for p in ids[chunk_per_load * i + index * self._profiles_count_per_load : chunk_per_load * i + (index + 1) * self._profiles_count_per_load]])}
-                if len(req_dict[key]) == 0:
-                    continue
-                for p in params:
-                    req_dict[p] = params[p]
-                job = GenericLoadJob(req_dict, c)
-                #print "starting g-job for " + str(chunk_per_load * i + index * self._profiles_count_per_load) + "-" + str(chunk_per_load * i + (index + 1) * self._profiles_count_per_load)
-                job.start()
-                jobs.append(job)
-            for j in jobs:
-                j.join()
-            #print "all g-jobs completed"
-            for (r, error) in [(j.response, j.error) for j in jobs]:
-                if r == None:
-                    raise error
-                for data_piece in r:
-                    yield data_piece       
+        return (group for group in self.set_generator({'method': 'groups.getById'}, 'gids', gids))       
                 
     def get_group_members(self, gid):
         params = {'method': 'groups.getMembers', 'gid': gid}
         for member in self.generic_countable_objects_generator(params, lambda r: r['users'], lambda r: True, 1000):
             yield member
-            
                 
     def get_posts_from_group(self, gid, from_time = 0):
         params = {'method': 'wall.get', 'owner_id': gid}
@@ -108,28 +89,79 @@ class VKCrawler(object):
         for like in self.generic_countable_objects_generator (params, lambda r: r['users'], lambda like: True):
             yield like
     
+    def get_jobs_done(self, reqs, creds):
+        jobs = [GenericLoadJob(r, c) for r, c in zip(reqs, creds)]
+        for j in jobs:
+            j.start()
+        for j in jobs:
+            j.join()
+        for j in jobs:
+            if j.response == None:
+                raise j.error
+        return [j.response for j in jobs]
+    
+    def set_generator(self, params, key, ids):
+        loaded = 0
+        while True:
+            if loaded >= len(ids):
+                break
+            workers_count = len(self._credentials_list)
+            prev_loaded = loaded
+            req_dicts = []
+            creds = []
+            for i in xrange(workers_count):
+                req_dict = {key: ",".join ([str(p) for p in ids[loaded + i * self._profiles_count_per_load : loaded + (i + 1) * self._profiles_count_per_load]])}
+                if len(req_dict[key]) == 0:
+                    break
+                for p in params:
+                    req_dict[p] = params[p]
+                #print str(loaded + i * self._profiles_count_per_load) + " " + str(loaded + (i + 1) * self._profiles_count_per_load)
+                req_dicts.append(req_dict)
+                creds.append(self._credentials_list[i])
+            try:  
+                result = [response for response in self.get_jobs_done(req_dicts, creds)]
+                loaded += workers_count * self._profiles_count_per_load
+            except LogError as e:
+                good_credentials = self.test_current_credentials()
+                if len(good_credentials) == len(self._credentials_list):
+                    raise e
+                self._credentials_list = good_credentials
+                if len(self._credentials_list) == 0:
+                    raise LogError(OutOfCredentialsError())
+                else:
+                    print "Credentials failure in process, remaining good credentials count: " + str(len(self._credentials_list))
+                    loaded = prev_loaded
+                    continue  
+            for r in result:
+                for data_piece in r:
+                    yield data_piece
+    
     def generic_countable_objects_generator (self, request_params, fetch_array_func, filter_func, count = 0):
         offset = 0
         if count == 0:
             count = self._count_per_load
         while True:
-            jobs = []
+            req_dicts = []
+            prev_offset = offset
             for c in self._credentials_list:
                 req_dict = {'offset': str (offset), 'count': str (count)}
                 offset += count
                 for p in request_params:
                     req_dict[p] = request_params[p]
-                #print "starting job for " + str(offset) + "-" + str(offset + count)
-                job = GenericLoadJob(req_dict, c)
-                job.start()
-                jobs.append (job)
-            for j in jobs:
-                j.join()
-                #print "result for job: " + str(j.response)
-            for j in jobs:
-                if j.response == None:
-                    raise j.error
-            responses = [fetch_array_func(j.response) for j in jobs]
+                req_dicts.append(req_dict)    
+            try:    
+                responses = [fetch_array_func(r) for r in self.get_jobs_done(req_dicts, self._credentials_list)]
+            except LogError as e:
+                good_credentials = self.test_current_credentials()
+                if len(good_credentials) == len(self._credentials_list):
+                    raise e
+                self._credentials_list = good_credentials
+                if len(self._credentials_list) == 0:
+                    raise LogError(OutOfCredentialsError())
+                else:
+                    print "Credentials failure in process, remaining good credentials count: " + str(len(self._credentials_list))
+                    offset = prev_offset
+                    continue
             finished_flag = False
             for r in responses:
                 if not isinstance(r, list) or len(r) == 0:
@@ -142,4 +174,4 @@ class VKCrawler(object):
                             finished_flag = True
                             continue
             if finished_flag:
-                return        
+                return  

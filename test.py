@@ -13,7 +13,6 @@ from group_spy.main_spy.views import get_series_for_posts, get_social_activity_f
 from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment
 from datetime import datetime
 
-
 #past = datetime.now()
 #http://localhost:8000/series/group13643401/social_dynamics_all//1296385474/1327921474/
 #get_all_stats_series_for_posts(None, '13643401', '', '1296385474', '1327921474')
@@ -24,7 +23,7 @@ from datetime import datetime
 #print datetime.now() - past
 #exit()
 
-#http://localhost:8000/series/group21977113/social_dynamics//reposts/1326791430/1327557922/
+#http://localhost:8000/series/group21977113/social_dynamics/all/reposts/1326791430/1327557922/
 #get_series_for_posts(None, '21977113', 'reposts', '', '1326791430', '1327557922')
 #http://localhost:8000/group13643401/intraday_stratify/1325068941/1327660941/
 #get_social_activity_for_intraday_stratas(None, '13643401', '1325068941', '1327660941')

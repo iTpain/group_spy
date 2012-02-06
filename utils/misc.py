@@ -12,14 +12,7 @@ def get_credentials():
         if not isinstance(credentials, list):
             return None
         credentials_list = [c for c in credentials if isinstance(c, dict) and len([r for r in required_credentials if not r in c]) == 0]
-        good_credentials_list = []
-        for c in credentials_list:
-            try:
-                if VKCrawler([c]).test_current_credentials():
-                    good_credentials_list.append(c)
-            except LogError as e:
-                print "Error while testing credentials " + str(e)
-                continue        
+        good_credentials_list = VKCrawler(credentials_list).test_current_credentials()     
         if len(good_credentials_list) == 0:
             return None
         else:

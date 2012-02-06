@@ -2,18 +2,16 @@ from group_spy.main_spy.models import GroupObservation, Group, Post, DemogeoGrou
 from time import gmtime, strftime
 from group_spy.logger.error import LogError
 from datetime import datetime
+from django.db.models import Sum
 import json
 
 def compute_group_activity(active_posts):
     stats = {"likes": 0, "comments": 0, "reposts": 0}
     response_stats = {"likes": "active_posts_likes", "comments": "active_posts_comments", "reposts": "active_posts_reposts"}
-    for post in active_posts:
-        for k, v in stats.iteritems():
-            try:
-                value = LatestPostObservation.objects.filter(post=post, statistics=k)[0].value
-            except LatestPostObservation.DoesNotExist:
-                value = 0
-            stats[k] = v + value 
+    for k, v in stats.iteritems():
+        value = LatestPostObservation.objects.filter(post__in=[p.id for p in active_posts], statistics=k).aggregate(Sum('value'))['value__sum']
+        if value != None:
+            stats[k] += value
     mapped_stats = {}
     for k, v in stats.iteritems():
         mapped_stats[response_stats[k]] = v
@@ -33,9 +31,13 @@ class GroupScanner(object):
                 print "Scanning group " + g.gid
                 active_posts = list(Post.objects.filter(closed=False, group=g.gid))
                 auditory_result = self.scan_auditory_activity(crawler, active_posts, g.gid)
+                print "auditory activity scanned"
                 users_result = self.scan_group_users(crawler, g.gid)
+                print "users scanned"
                 activity_result = compute_group_activity(active_posts)
+                print "group activity scanned"
                 self.write_observations(g, dict(dict(users_result.items() + activity_result.items()).items() + auditory_result.items()))
+                print "observations written"
                 g.last_scanned = datetime.now()
                 print "Group " + g.gid + " successfully scanned"
             except Exception as e:
@@ -77,13 +79,15 @@ class GroupScanner(object):
         group_uids = [u for u in crawler.get_group_members(gid)]
         profiles = []
         for p in crawler.get_profiles(group_uids):
-            profiles.append(p)
             if p['photo'] in self.BANNED_AVATARS:
                 banned_users += 1
-            elif p['photo'] in self.FACELESS_AVATARS:
+            else:
+                profiles.append(p)
+            if p['photo'] in self.FACELESS_AVATARS:
                 faceless_users += 1
             total_users += 1
             #print p
+        print "analyzing demogeo"
         self.analyze_demogeo(gid, profiles, True, crawler)
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
     
@@ -125,9 +129,8 @@ class GroupScanner(object):
             sum += c[1]
         for index, c in enumerate(cities):
             cities[index] = [alias_dict[c[0]], float(c[1]) / sum]
-        print cities
         major_cities = self.get_optimal_cities_set(cities, 0.01, 0.02, 0.01, 0.8)
-        print major_cities
+        #print major_cities
         return major_cities        
     
     def get_age_strata(self, profile):
@@ -174,7 +177,6 @@ class GroupScanner(object):
             if not final_strata in stratas:
                 stratas[final_strata] = 0
             stratas[final_strata] += 1
-        print stratas
         return stratas        
         
     def write_observations(self, group, result):

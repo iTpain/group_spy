@@ -4,7 +4,7 @@ from group_spy.crawler.vk import VKCrawler
 from group_spy.logger.error import LogError
 from time import sleep;
 from datetime import datetime, timedelta
-import smtplib
+import smtplib, gc
 from email.mime.text import MIMEText
 
 COMMASPACE = ', '
@@ -48,7 +48,8 @@ def launch(scanner_classes, scan_intervals):
                     scan_interval = scan_intervals[index]
                     current_intervals[index] = scan_interval
                     time_before = datetime.now()
-                    scanner_classes[index]().scan(crawler)                   
+                    scanner_classes[index]().scan(crawler)
+                    gc.collect()                
                     time_after = datetime.now()
                     seconds_passed = (time_after - time_before).total_seconds()
                     for i, v in enumerate(current_intervals):

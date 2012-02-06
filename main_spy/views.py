@@ -205,7 +205,7 @@ def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, tim
         stats[l.post_id] = l.value 
     current_time = time_start
     while current_time <= time_end:
-        posts_in_quanta = [p for p in posts if p.date <= current_time and p.last_comment_date >= current_time]
+        posts_in_quanta = [p for p in posts if p.date <= current_time and p.last_comment_date + timedelta(days=7) >= current_time]
         stat = 0
         for p in posts_in_quanta:
             stat = stat + stats[p.id]

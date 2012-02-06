@@ -30,10 +30,8 @@ class PostsScanner(object):
             except Post.DoesNotExist:
                 now = iso_date_from_ts(time.time())
                 post_date = iso_date_from_ts(p['date'])
-                #enforce minimum 1 day life-cycle of post
-                enforced_last_comment = (datetime.fromtimestamp(p['date']) + timedelta(days=1)).isoformat(' ')
-                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=enforced_last_comment, group_id=gid)
-                print "Post " + str(p['id']) + " added, date published: " + post_date + " enforced last_comment: " + str(enforced_last_comment)
+                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
+                print "Post " + str(p['id']) + " added, date published: " + post_date
                 new_post.save()
                 for s in self._stats:
                     latest_obs = LatestPostObservation(post=new_post, statistics=s, value=0)
