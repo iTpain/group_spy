@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from django.core.management import setup_environ
 import imp
 
@@ -12,6 +15,39 @@ from group_spy.main_spy.post_scan import PostsScanner
 from group_spy.main_spy.views import get_series_for_posts, get_social_activity_for_intraday_stratas, get_all_stats_series_for_posts, get_social_activity_for_intraweek_stratas
 from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment
 from datetime import datetime
+from group_spy.textmine.vocabulary import Stemmer, StopWordsFilter, VocabularyTransform
+from HTMLParser import HTMLParser
+
+#stemmer = Stemmer("c:/projects/mystem.exe")
+#stemmed = stemmer.stem_text(u'Бородатая Марина пошла в магазин и купила кроссовки nike. Ее поддержалм Моцарт и Сальери, которые знатно напились до красно-синего цвета лица.')
+#words = StopWordsFilter("c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/stop_words.in", stemmer).cleanse(stemmed)
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        self.reset()
+        self.fed = []
+    def handle_data(self, d):
+        self.fed.append(d)
+    def get_data(self):
+        return ''.join(self.fed)
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
+
+parser = HTMLParser()
+posts = Post.objects.filter(group='13643401')[0:500]
+for p in posts:
+    print strip_tags(p.text)
+    print "****************"
+documents = [p.text for p in posts]
+v = VocabularyTransform.make("c:/projects/mystem.exe", "c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/stop_words.in")
+(v, c) = v.create_from_texts(documents)
+for c1 in c:
+    print c1
+
+exit()
 
 #past = datetime.now()
 #http://localhost:8000/series/group13643401/social_dynamics_all//1296385474/1327921474/
