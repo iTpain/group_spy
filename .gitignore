@@ -39,5 +39,8 @@ Thumbs.db
 *.gif
 *.pyc
 *.swf
+*.db
 db
 upload
+settings.py
+vk_credentials.json
