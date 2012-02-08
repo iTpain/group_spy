@@ -134,22 +134,61 @@ div.inline {
 
 #group-list-column {
 	margin-left:1%;
-	width: 16%;
+	width: 20%;
 }
 
-#advanced-query-column {
-	width: 33%;
-	margin-left:2%;
+#system-column {
+	width: 30%;
+	margin-left:4%;
+	margin-right:1%;
 }
 
 #stats-column {
 	margin-left:4%;
-	width: 44%;
+	width: 40%;
+}
+
+#control_div {
+	position:fixed;
+	background:#444444;
+	bottom:0px;
+	width:100%;
+	min-width:800px;
+	height:50px;
+}
+
+#control_div div {
+	margin-top: 6px;
+	color:white;
+	float:left;
+}
+
+#addgroup_div {
+	margin-left:20px;
+}
+
+#screen-select-div {
+	margin-left:50px;
+}
+
+#operations-counter {
+	position: absolute;
+	right: 10px;
 }
 
 </style>
-<script src="{{ STATIC_URL }}js/jquery.js"></script>
-<script src="{{ STATIC_URL }}js/jquery.DOMWindow.js"></script>
+<script>
+var groups_info = [
+	0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}
+]
+groups_info.shift()
+</script>
+<script src="{{ STATIC_URL }}js/external/jquery.js"></script>
+<script src="{{ STATIC_URL }}js/external/jquery.DOMWindow.js"></script>
+<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
+<script src="{{ STATIC_URL }}js/lib/scriptloader.js"></script>
+<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
+<script src="{{ STATIC_URL }}js/ui/main-screen.js"></script>
 </head>
 <body>
 <div>
@@ -200,118 +239,29 @@ div.inline {
 			<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
 		</div>
 		{% endfor %}
-		<div class="group" id="addgroup_div">
-			<span class="emphasize pointer" onclick="addGroup ()">Добавить</span> группу <input id="added_group_id" type="text" style="width: 70px"> 
-		</div>
 	</div>
 	<div class="column" id="stats-column">
 		<div class="header second-column-header" id="stats-header">
-			Общая статистика<span id=methodology-help>[?]</span>
+			<div id="screen-stat-header">Общая статистика<span id=methodology-help>[?]</span></div>
+			<div id="screen-post-header" style="display:none">Посты группы</div>
+			<div id="screen-query-header" style="display:none">Сложные запросы</div>
 		</div>
 		<div class="group_asking_to_click second-column-header">Выберите группу из списка слева</div>
 		<iframe frameborder="no" id="graphFrame" width="830" height="5000"></iframe>
 	</div>
-	<div class="column" id="advanced-query-column">
-		<div class="header second-column-header" id="stats-header">
-			Сложные запросы
+	<div class="column" id="system-column">
+		<div class="header second-column-header" id="stats-header">Состояние системы</div>
+	</div>
+	<div id="control_div">
+		<div class="group" id="addgroup_div">
+			<span class="emphasize pointer" onclick="addGroup ()">Добавить</span> группу <input id="added_group_id" type="text" style="width: 70px; margin-left:10px;"> 
+		</div>
+		<div id="screen-select-div" class="group">
+			<span>Вывести:</span><select style="margin-left:15px;" id="screen-select"><option value="screen-stat">статистику</option><option value="screen-post">посты</option><option value="screen-query">сложные запросы</option></select>
+		</div>
+		<div id="operations-counter" class="group">
 		</div>
 	</div>
 </div>
-
-<script type="text/javascript">
-	var groups_info = [
-		0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}
-	]
-	function find_group_by_id(gid) {
-		for (var i = 0, l = groups_info.length; i < l; i++) {
-			if (gid == groups_info[i].gid)
-				return groups_info[i]
-		}
-		return null
-	}
-	groups_info.shift()
-	
-	var opened_dialog = null
-	var dialog_funcs = {
-		"group_info_updater": function (gid) {
-			$("#group_id_hidden_input")[0].value = gid
-			$("#group_agency_input")[0].value = $("#group_agency_span_" + gid)[0].innerHTML
-			$("#group_brand_input")[0].value = $("#group_brand_span_" + gid)[0].innerHTML
-			$("#group_updater_header")[0].innerHTML = find_group_by_id(gid).alias
-		}
-	}
-	function show_dialog (dialog_id, params) {
-		close_current_dialog()
-		dialog_funcs[dialog_id].apply (window, params)
-		opened_dialog = $("#" + dialog_id)
-		opened_dialog.openDOMWindow({
-			windowSourceID: '#' + dialog_id,
-			height: 150
-		})
-	}
-	
-	function close_current_dialog() {
-		if (opened_dialog != null) {
-			opened_dialog.closeDOMWindow()
-			opened_dialog = null
-		}
-	}
-	
-	function update_group_info() {
-		var agency = $("#group_agency_input")[0].value
-		var brand = $("#group_brand_input")[0].value
-		var gid = $("#group_id_hidden_input")[0].value
-		$.ajax({
-			url: '/group' + gid + '/update_info/',
-			type: 'post',
-			data: 'agency=' + encodeURIComponent(agency) + "&brand=" + encodeURIComponent(brand),
-			success: function (data) {
-				$("#group_agency_span_" + gid)[0].innerHTML = agency
-				$("#group_brand_span_" + gid)[0].innerHTML = brand;
-				close_current_dialog()
-			}
-		})
-	}
-	
-	var curSelected = null
-	function showGroup (gid, obj) {
-		document.getElementById ("graphFrame").src = "group" + gid
-		$("div.group_asking_to_click")[0].style.display = "none"
-		if (curSelected != null) 
-			$(curSelected)[0].style.color = ""
-		$("#group_alias_" + gid)[0].style.color = "#ff6600"
-		curSelected = $("#group_alias_" + gid)[0]
-	}
-	
-	function addGroup () {
-		gid = $("#added_group_id")[0].value
-		if (gid.length == 0)
-			return;
-		$.ajax ({
-			'url': '/group/add/' + gid,
-			'error': function (err) { alert (err.errors) },
-			'success': function (res) {
-				if (res.errors.length > 0) {
-					alert (res.errors)
-				} else {
-					res = res.response
-					var div = $('<div class="group">' +
-								'<div class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</div>' +
-								'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">Агентство не указано</span> - <span id="group_brand_span_'+res.gid+'">Бренд не указан</span></span></div>' +
-								'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
-								'</div>')[0]
-					$("#group_list_column")[0].insertBefore (div, $("#addgroup_div")[0]);
-					groups_info.push({gid: res.gid, alias: res.alias, agency: '', brand: ''})
-				}
-			},
-		});
-	}
-	
-	$("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
-		windowSourceID: "#methodology-helper",
-		width: 640,
-		height: 480
-	})})
-</script>
 </body>
 </html>

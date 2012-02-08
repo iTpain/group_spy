@@ -36,6 +36,19 @@ def strip_tags(html):
     s.feed(html)
     return s.get_data()
 
+def prepare_corpus():
+    parser = HTMLParser()
+    posts = Post.objects.filter(group='13643401')[0:500]
+    file = open("c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/corpus.in", "w")
+    for p in posts:
+        text = strip_tags(p.text)
+        text.replace('\n', ' ')
+        file.write(text)
+        file.write('\n\n')
+
+prepare_corpus()
+exit()    
+
 parser = HTMLParser()
 posts = Post.objects.filter(group='13643401')[0:500]
 for p in posts:

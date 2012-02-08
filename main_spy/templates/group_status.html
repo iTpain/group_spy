@@ -78,14 +78,35 @@ div.chart_container {
 
 </style>
 
-<script src="{{ STATIC_URL }}js/jquery.js" type="text/javascript"></script>
-<script src="{{ STATIC_URL }}js/highcharts.js" type="text/javascript"></script>
-<script src="{{ STATIC_URL }}js/highstock.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/external/jquery.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/external/highcharts.js" type="text/javascript"></script>
+<script src="{{ STATIC_URL }}js/external/highstock.js" type="text/javascript"></script>
 <script>
 // обновить базу - добавить все постам без аттача АТТАЧ "NO ATTACH"; сделать всем постам минимальный последний коммент - 1 день
 $(document).ready(function() {
 	date_now = Math.round (new Date().getTime() / 1000)
 	back_for_month = date_now - 364 * 24 * 60 * 60
+	
+	function make_sliding_average(data, count) {
+		count = Math.round(count)
+		if (count < 2)
+			return data
+		var cur_arr = []
+		var output = []
+		for (var i = 0, l = data.length; i < l; i++) {
+			cur_arr.push(data[i])
+			if (cur_arr.length <= count) {
+				output.push(data[i])
+			} else {
+				cur_arr.shift()
+				var sum = 0
+				for (var j = 0; j < count; j++) 
+					sum += cur_arr[j][1]
+				output.push([data[i][0], sum / count])
+			}
+		}
+		return output
+	}
 	
 	function create_controls(chart_description) {
 		if ('controls' in chart_description) {
@@ -624,8 +645,10 @@ $(document).ready(function() {
 					var series = data.response[series_info[i].stat_id].series
 					if (series[series.length - 1][1] == 0)
 						series.pop()
-					process_series_response(series, series_info[i].index, description) 
-					description.chart.series[series_info[i].index].setData(description.data[series_info[i].index])
+					process_series_response(series, series_info[i].index, description)
+					var series_data = description.data[series_info[i].index]
+					var filtered_data = make_sliding_average(series_data, series_data.length / 50)
+					description.chart.series[series_info[i].index].setData(filtered_data)
 				}
 			}
 		});	
