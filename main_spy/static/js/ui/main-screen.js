@@ -17,7 +17,7 @@ var current_screen = 'screen-stat'
 var group_shown = null
 
 $("#screen-select").bind("change", function (e) {
-	current_screen = e.srcElement.value
+	current_screen = e.target.value
 	redrawFrame()
 })
 
@@ -107,7 +107,7 @@ function addGroup () {
 				res = res.response
 				var div = $('<div class="group">' +
 							'<div class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</div>' +
-							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">Агентство не указано</span> - <span id="group_brand_span_'+res.gid+'">Бренд не указан</span></span></div>' +
+							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ</span> - <span id="group_brand_span_'+res.gid+'">пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ</span></span></div>' +
 							'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
 							'</div>')[0]
 				$("#group-list-column")[0].appendChild (div);

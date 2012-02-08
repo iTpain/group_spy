@@ -45,22 +45,20 @@ def prepare_corpus():
         text.replace('\n', ' ')
         file.write(text)
         file.write('\n\n')
+  
 
-prepare_corpus()
-exit()    
-
-parser = HTMLParser()
-posts = Post.objects.filter(group='13643401')[0:500]
-for p in posts:
-    print strip_tags(p.text)
-    print "****************"
-documents = [p.text for p in posts]
-v = VocabularyTransform.make("c:/projects/mystem.exe", "c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/stop_words.in")
-(v, c) = v.create_from_texts(documents)
-for c1 in c:
-    print c1
-
-exit()
+#parser = HTMLParser()
+#posts = Post.objects.filter(group='13643401')[0:500]
+#for p in posts:
+#    print strip_tags(p.text)
+#    print "****************"
+#documents = [p.text for p in posts]
+#v = VocabularyTransform.make("c:/projects/mystem.exe", "c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/stop_words.in")
+#(v, c) = v.create_from_texts(documents)
+#for c1 in c:
+#    print c1
+#
+#exit()
 
 #past = datetime.now()
 #http://localhost:8000/series/group13643401/social_dynamics_all//1296385474/1327921474/
