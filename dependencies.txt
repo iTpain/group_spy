@@ -1,0 +1,2 @@
+jsage : main_spy/static/js
+js_external : main_spy/static/js
