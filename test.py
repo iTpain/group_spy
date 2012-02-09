@@ -15,7 +15,6 @@ from group_spy.main_spy.post_scan import PostsScanner
 from group_spy.main_spy.views import get_series_for_posts, get_social_activity_for_intraday_stratas, get_all_stats_series_for_posts, get_social_activity_for_intraweek_stratas
 from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment
 from datetime import datetime
-from group_spy.textmine.vocabulary import Stemmer, StopWordsFilter, VocabularyTransform
 from HTMLParser import HTMLParser
 
 #stemmer = Stemmer("c:/projects/mystem.exe")
@@ -37,14 +36,13 @@ def strip_tags(html):
     return s.get_data()
 
 def prepare_corpus():
-    parser = HTMLParser()
     posts = Post.objects.filter(group='13643401')[0:500]
-    file = open("c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/corpus.in", "w")
+    file_in = open("c:/users/projects/eclipse_projects/group_spy/group_spy/textmine/corpus.in", "w")
     for p in posts:
         text = strip_tags(p.text)
         text.replace('\n', ' ')
-        file.write(text)
-        file.write('\n\n')
+        file_in.write(text)
+        file_in.write('\n\n')
   
 
 #parser = HTMLParser()

@@ -1,4 +1,4 @@
-new Module('lib/eventbus.js', [], function () {
+new Module('lib/eventbus.js', ['lib/mixin.js'], function () {
 
 console.log("EventBus - pub/sub messaging system")
 
@@ -14,48 +14,96 @@ jsage.EventBus.prototype = {
 		this.event_types = {}
 	},
 	
-	subscribe: function(msg_type, obj) {
-		if (!(msg_types in this.event_types)) {
-			this.event_types[msg_type] = []
+	find: function(arr, obj, response) {
+		for (var i = 0, l = arr.length; i < l; i++) {
+			var elem = arr[i]
+			if (elem[0] == obj && elem[1] == response)
+				return i
 		}
-		if (this.event_types[msg_type].indexOf(obj) < 0)
-			this.event_types[msg_type].push(obj)
+		return -1
 	},
 	
-	unsubscribe: function(msg_type, obj) {
+	subscribe: function(msg_type, obj, response) {
+		if (!(msg_type in this.event_types)) {
+			this.event_types[msg_type] = []
+		}
+		if (this.find(this.event_types[msg_type], obj, response) < 0)
+			this.event_types[msg_type].push([obj, response])
+	},
+	
+	unsubscribe: function(msg_type, obj, response) {
 		if (!(msg_type in this.event_types))
 			return
-		var subscribers = this.event_types[msg_types]
-		var pos = subscribers.indexOf(obj)
+		var subscribers = this.event_types[msg_type]
+		var pos = this.find(subscribers, obj, response)
 		if (pos > -1) 
 			subscribers.splice(pos, 1)
 	},
 	
+	fully_unsubscribe: function(obj) {
+		for (var e in this.event_types) {
+			var subscribers = this.event_types[e]
+			for (var i = 0, l = subscribers.length; i < l; i++) {
+				if (subscribers[i][0] == obj) {
+					subscribers[i] = subscribers[l - 1]
+					subscribers.pop()
+					i--
+					l--
+				}
+			}
+		}
+	},
+	
 	trigger: function(msg_type, msg) {
-		console.log(msg_type)
 		if (msg_type in this.event_types) {
-			var subscribers = this.event_types[msg_types]
-			for (var i = 0, l = subscribers.length; i < l; i++)
-				subscribers[i](msg)
+			var subscribers = this.event_types[msg_type]
+			for (var i = 0, l = subscribers.length; i < l; i++) {
+				var obj = subscribers[i][0]
+				var func = subscribers[i][1]
+				func.apply(obj, [msg])
+			}
 		}
 	}
 
 }
 
-window.make_event_augmentation_factory = function (bus) { 
-	return function augment_with_messaging(obj) {
-		var p = obj.__proto__
-		p.subscribe = function(msg_type) {
-			bus.subscribe(msg_type, this)
-		}
-		p.unsubscribe = function(msg_type) {
-			bus.unsubscribe(msg_type, this)
-		}
-		p.trigger = function(msg_type, msg) {
-			bus.trigger(msg_type, msg)
-		}
+jsage.MessagingObject = new jsage.Class("MessagingObject", [], {
+		
+	init: function(bus) {
+		this.bus = bus
+	},
+	
+	free: function() {
+		this.bus.fully_unsubscribe(this)
+	},
+	
+	subscribe: function(msg_type, response) {
+		this.bus.subscribe(msg_type, this, response)
+	},
+	
+	unsubscribe: function(msg_type, response) {
+		this.bus.unsubscribe(msg_type, this, response)
+	},
+	
+	trigger: function(msg_type, msg) {
+		this.bus.trigger(msg_type, msg)
 	}
-}
+	
+})
 
-window.jsage.eventbus_augmentation = make_event_augmentation_factory(new jsage.EventBus())
+var global_bus = new jsage.EventBus()
+jsage.GlobalMessagingObject = new jsage.Class("GlobalMessagingObject", [jsage.MessagingObject], {
+	bus: global_bus,
+	
+	free: function() {
+		this.free_MessagingObject()
+	}
+})
+
+jsage.GlobalMessagerObject = new jsage.Class("GlobalMessagerObject", [], {
+	trigger: function(msg_type, msg) {
+		global_bus.trigger(msg_type, msg)
+	}
+})
+
 })

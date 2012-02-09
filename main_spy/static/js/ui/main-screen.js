@@ -1,7 +1,8 @@
-new Module('ui/main_screen.js', ['ui/operations-counter.js'], function() {
+new Module('ui/main_screen.js', ['ui/operations-counter.js', 'utils/async-operations.js'], function() {
 
 console.log("Main screen - group spy")
 
+$(document).ready(function () {
 var screens_info = {
 	'screen-stat': {
 		address: 'group'
@@ -54,7 +55,7 @@ var dialog_funcs = {
 		$("#group_updater_header")[0].innerHTML = find_group_by_id(gid).alias
 	}
 }
-function show_dialog (dialog_id, params) {
+window.show_dialog = function (dialog_id, params) {
 	close_current_dialog()
 	dialog_funcs[dialog_id].apply (window, params)
 	opened_dialog = $("#" + dialog_id)
@@ -71,20 +72,19 @@ function close_current_dialog() {
 	}
 }
 
-function update_group_info() {
+window.update_group_info = function() {
 	var agency = $("#group_agency_input")[0].value
 	var brand = $("#group_brand_input")[0].value
 	var gid = $("#group_id_hidden_input")[0].value
-	$.ajax({
-		url: '/group' + gid + '/update_info/',
-		type: 'post',
-		data: 'agency=' + encodeURIComponent(agency) + "&brand=" + encodeURIComponent(brand),
-		success: function (data) {
+	ajaxOperationsManager.do_operation(
+		'/group' + gid + '/update_info/', 'post', {agency: encodeURIComponent(agency), brand: encodeURIComponent(brand)},
+		function (data) {
 			$("#group_agency_span_" + gid)[0].innerHTML = agency
 			$("#group_brand_span_" + gid)[0].innerHTML = brand;
 			close_current_dialog()
+			return true
 		}
-	})
+	)
 }
 
 var curSelected = null
@@ -93,29 +93,58 @@ window.showGroup = function (gid, obj) {
 	redrawFrame()
 }
 
-function addGroup () {
+window.addGroup = function () {
 	gid = $("#added_group_id")[0].value
 	if (gid.length == 0)
 		return;
-	$.ajax ({
-		'url': '/group/add/' + gid,
-		'error': function (err) { alert (err.errors) },
-		'success': function (res) {
+	ajaxOperationsManager.do_operation(
+		'/group/add/' + gid, 'get', null,
+		function (res) {
 			if (res.errors.length > 0) {
-				alert (res.errors)
+				return false
 			} else {
 				res = res.response
-				var div = $('<div class="group">' +
-							'<div class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</div>' +
-							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">��������� �� �������</span> - <span id="group_brand_span_'+res.gid+'">����� �� ������</span></span></div>' +
+				var div = $('<div class="group" id="group_div_' + res.gid + '">' +
+							'<div class="group_header"><span class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</span><span onclick="deleteGroup(' + res.gid + ')" class="group_delete" style="display:none">x</span></div>' +
+							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">агентство не указано</span> - <span id="group_brand_span_'+res.gid+'">бренд не указан</span></span></div>' +
 							'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
 							'</div>')[0]
 				$("#group-list-column")[0].appendChild (div);
+				groups_mouse_interaction_bindage()
 				groups_info.push({gid: res.gid, alias: res.alias, agency: '', brand: ''})
+				return true
 			}
 		},
-	});
+		function (err) { }
+	)
 }
+
+window.deleteGroup = function (gid) {
+	if (confirm('Вы уверены, что хотите удалить группу?'))
+		ajaxOperationsManager.do_operation(
+			'/group/delete/' + gid, 'get', null,
+			function (res) {
+				if (res.errors.length > 0) {
+					alert (res.errors)
+					return false
+				} else {
+					$("#group-list-column")[0].removeChild($("#group_div_" + gid)[0])
+					return true
+				}
+			},
+			function (err) { alert (err.errors) }
+		)	
+}
+
+function groups_mouse_interaction_bindage () {
+	$("div.group_header").bind("mouseover", function(e) {
+		e.currentTarget.childNodes[1].style.display = 'inline'
+	})
+	$("div.group_header").bind("mouseout", function(e) {
+		e.currentTarget.childNodes[1].style.display = 'none'
+	})
+}
+groups_mouse_interaction_bindage()
 
 $("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
 	windowSourceID: "#methodology-helper",
@@ -123,8 +152,23 @@ $("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
 	height: 480
 })})
 
-// operations counter
-console.log(groupspy)
-var opCounter = new groupspy.OperationsCounter($("#operations-counter")[0])
+// manager objects
+var ajaxOperationsManager = groupspy.AjaxOperationsManager.create()
 
+// operations counter
+var opCounter1 = groupspy.OperationsCounter.create($("#operations-counter")[0])
+
+// errors panel
+var errorsPanel = jsage.ErrorPanel.create(10, 5000, [groupspy.messages.ajax_failure])
+$("body")[0].appendChild(errorsPanel.elements.container)
+
+// test
+function bad_op () {
+	ajaxOperationsManager.do_operation('http://localhos:8000/groups/', 'get', null, function (){ return true }, null, {description: 'simple operation'})
+	setTimeout (bad_op, 1000 + 1000 * Math.random())
+}
+//bad_op()
+
+
+})
 })

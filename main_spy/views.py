@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group, PostObservation, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation
+from group_spy.main_spy.models import GroupObservation, Group, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation
 from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from django.shortcuts import render_to_response
@@ -331,5 +331,14 @@ def add_group(request, gid, crawler):
         return {'gid': gid, 'alias': group_name}
     except:
         return {'errors': ['Failed to save group']}
+    
+@json_response
+def delete_group(request, gid):
+    try:
+        Group.objects.filter(gid=gid).delete()
+        return {}
+    except:
+        return {'errors': ['Failed to delete group']}
+    
     
     
