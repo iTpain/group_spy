@@ -1,4 +1,4 @@
-new Module('utils/async-operations.js', ['lib/mixin.js', 'lib/eventbus.js'], function() {
+new Module('utils/async-operations.js', ['jsage/mixin.js', 'jsage/eventbus.js'], function() {
 	
 groupspy.AjaxOperation = new jsage.Class('AjaxOperation', [jsage.GlobalMessagerObject], {	
 	init: function (url, req_type, data, success, error, operation_details) {

@@ -1,4 +1,4 @@
-new Module('ui/operations-counter.js', ['lib/eventbus.js', 'lib/baseui.js', 'lib/mixin.js'], function () {
+new Module('ui/operations-counter.js', ['jsage/eventbus.js', 'jsage/baseui.js', 'jsage/mixin.js'], function () {
 
 console.log('Operations counter - group_spy main screen\'s component')
 
