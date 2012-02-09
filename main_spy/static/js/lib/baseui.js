@@ -22,10 +22,11 @@ jsage.BaseUIObject = new jsage.Class('BaseUIObject', [], {
 
 })
 
+// error is {error: error_obj, operation_details: details_obj}
 jsage.ErrorPanel = new jsage.Class('ErrorPanel', [jsage.BaseUIObject, jsage.GlobalMessagingObject], {
 	
 	template: '<div data-tag="container" style="position:fixed; right: 0px; bottom:50px"></div>',
-	cell_template: '<div style="width: 400px; height: 20px; background:#FF7D63;"></div>',
+	cell_template: '<div style="width: 400px; padding: 5px; background:#FF7D63; font-size:10px; font-family:courier"></div>',
 	
 	errors: [],
 	cells: {},
@@ -59,7 +60,7 @@ jsage.ErrorPanel = new jsage.Class('ErrorPanel', [jsage.BaseUIObject, jsage.Glob
 	
 	add_cell: function (err, id) {
 		var div = $(this.cell_template)[0]
-		div.innerHTML = err.toString()
+		div.innerHTML = err.details.toString() + ": " + err.error.toString() 
 		$(this.elements.container).prepend(div)
 		this.cells[id] = div
 	},

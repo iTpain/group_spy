@@ -9,15 +9,15 @@ groupspy.AjaxOperation = new jsage.Class('AjaxOperation', [jsage.GlobalMessagerO
 			data: data,
 			success: function(response) {
 				var result = success(response)
-				if (result)
+				if (result === true)
 					that.trigger(groupspy.messages.ajax_success, operation_details)
 				else
-					that.trigger(groupspy.messages.ajax_failure, operation_details)
+					that.trigger(groupspy.messages.ajax_failure, {details: operation_details, error: result})
 			},
 			error: function(response) {
 				if (error)
 					error(response)
-				that.trigger(groupspy.messages.ajax_failure, operation_details)
+				that.trigger(groupspy.messages.ajax_failure, {details: operation_details, error: "HttpRequest failure"})
 			}
 		})
 	}	

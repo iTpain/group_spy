@@ -14,6 +14,7 @@ body {
 	font-family: 'Segoe UI';
 	min-width:1800px;
 	overflow-x:auto;
+	overflow-y:hidden;
 }
 
 div.header {
@@ -44,9 +45,9 @@ span.group_alias:hover {
 
 span.group_delete {
 	color: red;
-	margin-left: 6px;
-	vertical-align: 9px;
-	font-size: 12px;
+	margin-left: 12px;
+	vertical-align: 1px;
+	font-size: 16px;
 	cursor:pointer;
 }
 
@@ -55,9 +56,13 @@ div.column {
 	margin-top: 15px;
 }
 
+div.metro-scroll {
+	overflow-y:auto;
+}
+
 a.group_href {
 	font-size: 14px;
-	color: grey;
+	color:#808080;
 	margin: 0;
 	padding: 0;
 }
@@ -68,12 +73,13 @@ div.group_href {
 
 div.group_info {
 	font-size: 14px;
-	color: grey;	
+	color:#808080;	
 }
 
 div.group_asking_to_click {
 	font-family: "Segoe UI";
 	font-size: 20px;
+	margin-top:-1px;
 }
 
 .pointer {
@@ -147,8 +153,9 @@ div.inline {
 
 #stats-column {
 	margin-left:6%;
-	width: 46%;
-	margin-right:6%
+	width: 47%;
+	margin-right:5%;
+	/*overflow-y:hidden !important;*/
 }
 
 #system-column {
@@ -182,6 +189,11 @@ div.inline {
 #operations-counter {
 	position: absolute;
 	right: 10px;
+}
+
+#graphFrame {
+	padding: 0;
+	margin: 0;
 }
 
 </style>
@@ -227,7 +239,6 @@ groups_info.shift()
 		<p>График отражает снимки пяти показателей</p>
 		<p>Активные пользователи - число юзеров, давших минимум один отклик суммарно по всем активным постам</p>
 		<p>Очень активные пользователи - число юзеров, давших минимум три отклика суммарно по всем активным постам</p>
-		<p></p>
 		<h3>График активности пользователей - 1</h3>
 		<p>Отображает снимки суммарного числа соц. действий по всем активным постам</p>
 		<h3>График активности пользователей - 2</h3>
@@ -240,13 +251,15 @@ groups_info.shift()
 		<div class="header">
 			Отслеживаемые группы
 		</div>
-		{% for g in groups %}
-		<div class="group" id="group_div_{{ g.gid }}">
-			<div class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
-			<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])"><span id="group_agency_span_{{g.gid}}">{% if g.agency|length_is:0 %}Агентство не указано{% else %}{{g.agency}}{% endif %}</span> - <span id="group_brand_span_{{g.gid}}">{% if g.brand|length_is:0 %}Бренд не указан{% else %}{{g.brand}}{% endif %}</span></span></div>
-			<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
+		<div class="metro-scroll">
+			{% for g in groups %}
+			<div class="group" id="group_div_{{ g.gid }}">
+				<div class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
+				<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])"><span id="group_agency_span_{{g.gid}}">{% if g.agency|length_is:0 %}Агентство не указано{% else %}{{g.agency}}{% endif %}</span> - <span id="group_brand_span_{{g.gid}}">{% if g.brand|length_is:0 %}Бренд не указан{% else %}{{g.brand}}{% endif %}</span></span></div>
+				<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
+			</div>
+			{% endfor %}
 		</div>
-		{% endfor %}
 	</div>
 	<div class="column" id="stats-column">
 		<div class="header second-column-header" id="stats-header">
@@ -255,7 +268,7 @@ groups_info.shift()
 			<div id="screen-query-header" style="display:none">Сложные запросы</div>
 		</div>
 		<div class="group_asking_to_click second-column-header">Выберите группу из списка слева</div>
-		<iframe frameborder="no" id="graphFrame" width="830" height="5000"></iframe>
+		<iframe frameborder="no" id="graphFrame" width="100%"></iframe>
 	</div>
 	<div class="column" id="system-column">
 		<div class="header second-column-header" id="stats-header">Состояние системы</div>

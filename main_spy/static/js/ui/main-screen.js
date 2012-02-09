@@ -98,10 +98,10 @@ window.addGroup = function () {
 	if (gid.length == 0)
 		return;
 	ajaxOperationsManager.do_operation(
-		'/group/add/' + gid, 'get', null,
+		'/group/add/' + gid + '/', 'get', null,
 		function (res) {
 			if (res.errors.length > 0) {
-				return false
+				return res.errors
 			} else {
 				res = res.response
 				var div = $('<div class="group" id="group_div_' + res.gid + '">' +
@@ -115,24 +115,25 @@ window.addGroup = function () {
 				return true
 			}
 		},
-		function (err) { }
+		function (err) { },
+		{ toString: function () { return 'Add-group ' + gid} }
 	)
 }
 
 window.deleteGroup = function (gid) {
 	if (confirm('Вы уверены, что хотите удалить группу?'))
 		ajaxOperationsManager.do_operation(
-			'/group/delete/' + gid, 'get', null,
+			'/group/delete/' + gid + '/', 'get', null,
 			function (res) {
 				if (res.errors.length > 0) {
-					alert (res.errors)
-					return false
+					return res.errors
 				} else {
 					$("#group-list-column")[0].removeChild($("#group_div_" + gid)[0])
 					return true
 				}
 			},
-			function (err) { alert (err.errors) }
+			function (err) { },
+			{ toString: function () { return 'Add-group ' + gid} }
 		)	
 }
 
@@ -151,6 +152,25 @@ $("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
 	width: 640,
 	height: 480
 })})
+
+function adjust_height() {
+	var h = $(window).height()
+	$(".metro-scroll").height(h - 116)
+	$("#graphFrame").height(h - 116)
+	window.externalFrameHeight = h - 116
+}
+function adjustIFrame(iframe) {
+	if (iframe.contentDocument) {
+		iframe.style.height = (iframe.contentDocument.body.offsetHeight + 60) + "px";
+	} else {
+		iframe.style.height = iframe.contentWindow.document.body.scrollHeight + "px";
+	}
+}
+$("#graphFrame").bind('load', function(e) {
+	//adjustIFrame($("#graphFrame")[0])
+})
+$(window).resize(adjust_height)
+adjust_height()
 
 // manager objects
 var ajaxOperationsManager = groupspy.AjaxOperationsManager.create()

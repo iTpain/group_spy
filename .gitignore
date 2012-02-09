@@ -45,3 +45,5 @@ upload
 settings.py
 vk_credentials.json
 .project
+.pydevproject
+.settings
