@@ -45,8 +45,8 @@ def receive_vk_credentials(request, api_id, secret, sid, viewer_id):
     else:
         return {'errors': ["Credentials test has failed"]}
        
-def group_status(request, gid):
-    return render_to_response ('group_status.html', {'group_id': gid}, context_instance=RequestContext(request))
+def group_status(request, group_id):
+    return render_to_response ('group_status.html', {'group_id': group_id}, context_instance=RequestContext(request))
 
 def groups_main(request):
     groups = Group.objects.all ()

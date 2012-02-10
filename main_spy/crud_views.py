@@ -3,23 +3,23 @@ from group_spy.main_spy.models import Group
 
 @json_response
 @request_vk_credentials
-def add_group(request, gid, crawler):
+def add_group(request, group_id, crawler):
     try:
-        obj = Group.objects.filter(gid=gid)
+        obj = Group.objects.filter(gid=group_id)
         if len(obj) > 0:
             return {'errors': ['group already added']}
-        for g in crawler.get_groups([gid]):
+        for g in crawler.get_groups([group_id]):
             group_name = g['name']
-        new_group = Group(gid=gid, alias=group_name)
+        new_group = Group(gid=group_id, alias=group_name)
         new_group.save()
-        return {'gid': gid, 'alias': group_name}
+        return {'gid': group_id, 'alias': group_name}
     except:
         return {'errors': ['Failed to save group']}
     
 @json_response
-def delete_group(request, gid):
+def delete_group(request, group_id):
     try:
-        Group.objects.filter(gid=gid).delete()
+        Group.objects.filter(gid=group_id).delete()
         return {}
     except:
         return {'errors': ['Failed to delete group']}

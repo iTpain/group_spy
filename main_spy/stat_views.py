@@ -15,10 +15,14 @@ def get_series_group_wide(request, group_id, stat_id, time_start, time_end):
 
 @json_response
 def get_series_group_wide_all_social_stats(request, group_id, time_start, time_end):
-    stats = {'active_posts_count': [], 'active_posts_likes': [], 'active_posts_reposts': [], 'active_posts_comments': []}
-    for s in stats.keys():
-        stats[s] = get_series_group_wide_inner(group_id, s, time_start, time_end)
-    return stats
+    return get_stats_set_group_wide(group_id, ['active_posts_count', 'active_posts_likes', 'active_posts_reposts', 'active_posts_comments'], time_start, time_end)
+
+@json_response
+def get_series_group_wide_all_user_stats(request, group_id, time_start, time_end):
+    return get_stats_set_group_wide(group_id, ['total_users', 'banned_users', 'faceless_users', 'users_1', 'users_3'], time_start, time_end)  
+
+def get_stats_set_group_wide(group_id, stats, time_start, time_end):
+    return {s: get_series_group_wide_inner(group_id, s, time_start, time_end) for s in stats}
 
 def get_series_group_wide_inner(group_id, stat_id, time_start, time_end):
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
@@ -211,7 +215,13 @@ def compute_activity_for_stratas(stratas):
     for k, s in stratas.iteritems():
         stratas[k]['stats'] = compute_group_activity(s['posts'])
         del stratas[k]['posts']
-    return stratas
+    response = {}
+    for k, s in stratas.iteritems():
+        for stat, val in s['stats'].iteritems():
+            if not stat in response:
+                response[stat] = {'series': []}
+            response[stat]['series'].append([k, val])
+    return response
 
 def intraday_stratify(posts):
     stratas = {k: {'posts': [], 'stats': {}} for k in xrange(24)}

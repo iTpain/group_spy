@@ -98,7 +98,7 @@ window.addGroup = function () {
 	if (gid.length == 0)
 		return;
 	ajaxOperationsManager.do_operation(
-		'/group/add/' + gid + '/', 'get', null,
+		'/group' + gid + '/add/', 'get', null,
 		function (res) {
 			if (res.errors.length > 0) {
 				return res.errors
@@ -123,7 +123,7 @@ window.addGroup = function () {
 window.deleteGroup = function (gid) {
 	if (confirm('Вы уверены, что хотите удалить группу?'))
 		ajaxOperationsManager.do_operation(
-			'/group/delete/' + gid + '/', 'get', null,
+			'/group' + gid + '/delete/', 'get', null,
 			function (res) {
 				if (res.errors.length > 0) {
 					return res.errors
@@ -159,16 +159,6 @@ function adjust_height() {
 	$("#graphFrame").height(h - 116)
 	window.externalFrameHeight = h - 116
 }
-function adjustIFrame(iframe) {
-	if (iframe.contentDocument) {
-		iframe.style.height = (iframe.contentDocument.body.offsetHeight + 60) + "px";
-	} else {
-		iframe.style.height = iframe.contentWindow.document.body.scrollHeight + "px";
-	}
-}
-$("#graphFrame").bind('load', function(e) {
-	//adjustIFrame($("#graphFrame")[0])
-})
 $(window).resize(adjust_height)
 adjust_height()
 
