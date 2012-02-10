@@ -109,7 +109,7 @@ window.addGroup = function () {
 							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">агентство не указано</span> - <span id="group_brand_span_'+res.gid+'">бренд не указан</span></span></div>' +
 							'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
 							'</div>')[0]
-				$("#group-list-column")[0].appendChild (div);
+				$("#groups-list")[0].appendChild (div);
 				groups_mouse_interaction_bindage()
 				groups_info.push({gid: res.gid, alias: res.alias, agency: '', brand: ''})
 				return true
@@ -128,7 +128,7 @@ window.deleteGroup = function (gid) {
 				if (res.errors.length > 0) {
 					return res.errors
 				} else {
-					$("#group-list-column")[0].removeChild($("#group_div_" + gid)[0])
+					$("#groups-list")[0].removeChild($("#group_div_" + gid)[0])
 					return true
 				}
 			},

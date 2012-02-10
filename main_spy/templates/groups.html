@@ -251,7 +251,7 @@ groups_info.shift()
 		<div class="header">
 			Отслеживаемые группы
 		</div>
-		<div class="metro-scroll">
+		<div class="metro-scroll" id="groups-list">
 			{% for g in groups %}
 			<div class="group" id="group_div_{{ g.gid }}">
 				<div class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
