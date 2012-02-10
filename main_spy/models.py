@@ -1,11 +1,20 @@
 from django.db import models
 
+class TextCategory(models.Model):
+    alias = models.CharField(max_length=256)
+
+class SocialNetwork(models.Model):
+    snid = models.CharField(max_length=256)
+    alias = models.CharField(max_length=256)
+
 class Group(models.Model):
     gid = models.CharField(max_length=256)
     last_scanned = models.DateTimeField(auto_now=True, auto_now_add=True)
     agency = models.TextField()
     brand = models.TextField()
     alias = models.CharField(max_length=1024)
+    social_network = models.ForeignKey(SocialNetwork, null=True)
+    text_categories = models.ManyToManyField(TextCategory)
 
 class Post(models.Model):
     pid = models.CharField(max_length=256)
@@ -65,4 +74,11 @@ class VKUserSocialAction(models.Model):
     user = models.ForeignKey(VKUser)
     likes = models.IntegerField()
     comments = models.IntegerField()
+    
+class PostTextCategoryAssignment (models.Model):
+    date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)
+    post = models.ForeignKey(Post)
+    category = models.ForeignKey(TextCategory)
+    assigned_by_human = models.BooleanField()
+    
     
