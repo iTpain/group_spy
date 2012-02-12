@@ -1,31 +1,5 @@
-new Module('ui/group-status.js', ['jsage/baseui.js', 'ui/charts-core.js'], function () {
+new Module('ui/group-status.js', ['jsage/baseui.js', 'ui/charts-core.js', 'ui/charts-aux.js'], function () {
 $(document).ready(function() {
-
-/*
-var content_types = ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video']
-var content_types_labels = ['Приложение', "Аудио", "Документ", "Граффити", "Ссылка", "Без вложений", "Заметка", "Страница", "Фото", "Опрос", "Фото(к)", "Видео"] 
-
-function make_sliding_average(data, count) {
-	count = Math.round(count)
-	if (count < 2)
-		return data
-	var cur_arr = []
-	var output = []
-	for (var i = 0, l = data.length; i < l; i++) {
-		cur_arr.push(data[i])
-		if (cur_arr.length <= count) {
-			output.push(data[i])
-		} else {
-			cur_arr.shift()
-			var sum = 0
-			for (var j = 0; j < count; j++) 
-				sum += cur_arr[j][1]
-			output.push([data[i][0], sum / count])
-		}
-	}
-	return output
-}
-*/
 
 var time_now = Math.round(new Date().getTime() / 1000)
 var month_before = time_now - 31 * 24 * 3600
@@ -109,7 +83,7 @@ function create_line_chart(series, params) {
 			maxPadding: 0.0,
 			ordinal: false,
 			events: {
-				setExtremes: function(event) { console.log(event); on_range_select (Math.round (event.min / 1000), Math.round (event.max / 1000)) }
+				setExtremes: function(event) { on_range_select (Math.round (event.min / 1000), Math.round (event.max / 1000)) }
 			}
 		},
 		yAxis: { min: 0 },
@@ -140,7 +114,7 @@ var user_stats_snapshots_chart = groupspy.DataChartPresentation.create(
 		{ color: '#44aa44', label: "Активные", id: "users_1" },
 		{ color: '#22ff22', label: "Очень активные", id: "users_3" }
 	],
-	[], 
+	[groupspy.NormalizeDataTransformer.create(false), groupspy.SlidingAverageDataTransformer.create(false, 0.05)], 
 	[groupspy.DefaultTimeFilter.create(month_before, time_now)],
 	{ 
 		title: 'Общая статистика по участникам', 
@@ -165,7 +139,7 @@ var social_stats_snapshots_chart = groupspy.DataChartPresentation.create(
 		{ color: '#ff6600', label: "Всего комментариев для а.п.", id: "active_posts_comments" },
 		{ color: '#0000ff', label: "Всего репостов для а.п.", id: "active_posts_reposts" }
 	],
-	[],
+	[groupspy.NormalizeDataTransformer.create(false), groupspy.SlidingAverageDataTransformer.create(false, 0.05)],
 	[groupspy.DefaultTimeFilter.create(month_before, time_now)],
 	{
 		title: 'Снимки активности участников', 
@@ -183,14 +157,17 @@ var social_stats_snapshots_chart = groupspy.DataChartPresentation.create(
 	'/group' + GROUP_ID +'/all_social_stats_snapshots/'
 )
 
+
+var content_types = ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video']
+var content_types_labels = ['Приложение', "Аудио", "Документ", "Граффити", "Ссылка", "Без вложений", "Заметка", "Страница", "Фото", "Опрос", "Фото(к)", "Видео"] 
 var social_stats_finals_chart = groupspy.DataChartPresentation.create(
 	[
 		{ color: '#ff0000', label: "лайки", id: "likes" },
 		{ color: '#ff6600', label: "комментарии", id: "comments" },
 		{ color: '#0000ff', label: "репосты", id: "reposts" }
 	],
-	[],
-	[groupspy.DefaultTimeFilter.create(year_before, time_now), { make_url_part: function() { return 'all' } }],
+	[groupspy.AverageDataTransformer.create(false), groupspy.NormalizeDataTransformer.create(false), groupspy.SlidingAverageDataTransformer.create(true, 0.02)],
+	[groupspy.DefaultTimeFilter.create(year_before, time_now), groupspy.MultiChoiceFilter.create(content_types, content_types_labels)],
 	{
 		title: 'Историческая статистика результативности постов', 
 		container: "group_social_activity_dynamics",
@@ -243,7 +220,7 @@ for (var i = 0, l = strata_charts.length; i < l; i++) {
 			{ label: "комментарии", name: "комментарии", id: "active_posts_comments" },
 			{ label: "репосты", name: "репосты", id: "active_posts_reposts" }
 		],
-		[],
+		[groupspy.AverageDataTransformer.create(false), groupspy.NormalizeDataTransformer.create(false)],
 		[groupspy.DefaultTimeFilter.create(month_before, time_now)],
 		params,
 		create_column_chart,

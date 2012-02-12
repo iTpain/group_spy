@@ -3,6 +3,7 @@ from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from group_spy.main_spy.views_utils import json_response
 from datetime import datetime, timedelta
+from django.db.models import F
 import time, json
 
 #
@@ -168,7 +169,7 @@ def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, tim
     content_types = [c for c in content_types.split(",") if len(c) > 0 and c in ['no_attachment', 'photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']]
     quanta = choose_quanta(time_end - time_start)
     series = []
-    posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start, date__lte=time_end)
+    posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start - timedelta(days=7), date__lte=time_end)
     if len(content_types) > 0:
         attachments = PostAttachment.objects.filter(post__in=[post.id for post in posts], attachment_type__in=content_types)
         posts_ids = {attachment.post_id: True for attachment in attachments}
@@ -204,7 +205,7 @@ def get_social_activity_for_content_stratas(request, group_id, time_start, time_
     return get_social_activity_stratified_template_func(group_id, time_start, time_end, content_type_stratify)
 
 def get_posts_in_period(group_id, time_start, time_end):
-    return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start))
+    return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start - timedelta(days=7)))
 
 def get_social_activity_stratified_template_func(group_id, time_start, time_end, stratification):
     posts = get_posts_in_period(group_id, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
@@ -212,15 +213,17 @@ def get_social_activity_stratified_template_func(group_id, time_start, time_end,
     return compute_activity_for_stratas(stratas)
 
 def compute_activity_for_stratas(stratas):
+    posts_counts = {}
     for k, s in stratas.iteritems():
         stratas[k]['stats'] = compute_group_activity(s['posts'])
+        posts_counts[k] = len(stratas[k]['posts'])
         del stratas[k]['posts']
     response = {}
     for k, s in stratas.iteritems():
         for stat, val in s['stats'].iteritems():
             if not stat in response:
                 response[stat] = {'series': []}
-            response[stat]['series'].append([k, val])
+            response[stat]['series'].append([k, val, posts_counts[k]])
     return response
 
 def intraday_stratify(posts):

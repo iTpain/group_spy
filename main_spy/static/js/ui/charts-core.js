@@ -19,7 +19,9 @@ groupspy.DefaultTimeFilter = new jsage.Class('DefaultTimeFilter', [], {
 	
 	make_url_part: function() {
 		return Math.round(this.t1) + "/" + Math.round(this.t2)
-	}
+	},
+	
+	set_chart: function() {}
 	
 })
 
@@ -38,15 +40,20 @@ groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 		this.series = groupspy.DataSeriesGroup.create(series_ids, function () { that.chart_data_fetched() })
 		
 		this.data_transformers = data_transformers.slice()
-		for (var i = 0, l = data_transformers.length; i < l; i++)
-			data_transformers[i].chart = this
+		for (var i = 0, l = data_transformers.length; i < l; i++) {
+			data_transformers[i].set_chart(this)
+		}
 		this.data_filters = data_filters.slice()
 		for (i = 0, l = data_filters.length; i < l; i++) {
-			data_filters[i].chart = this
+			data_filters[i].set_chart(this)
 			this.previous_filters_results[i] = null
 		}
 		this.data_url = data_url
 		this.fetch_chart_data()
+	},
+	
+	get_container: function() {
+		return this.chart.container.parentNode
 	},
 	
 	fetch_chart_data: function() {
@@ -117,7 +124,7 @@ groupspy.DataSeriesGroup = new jsage.Class('DataSeriesGroup', [], {
 		}
 	},
 	
-	clean_series: function(url) {
+	clean: function(url) {
 		for (var id in this.series)
 			this.series[id].clean()
 	}
