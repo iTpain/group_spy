@@ -13,8 +13,8 @@ class Group(models.Model):
     agency = models.TextField()
     brand = models.TextField()
     alias = models.CharField(max_length=1024)
-    social_network = models.ForeignKey(SocialNetwork, null=True)
-    text_categories = models.ManyToManyField(TextCategory)
+    social_network = models.ForeignKey(SocialNetwork, null=True, blank=True)
+    text_categories = models.ManyToManyField(TextCategory, blank=True)
 
 class Post(models.Model):
     pid = models.CharField(max_length=256)

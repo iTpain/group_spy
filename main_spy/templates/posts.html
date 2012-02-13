@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title></title>
+		<style>
+			@font-face {
+				font-family: 'Segoe UI';
+				src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
+			}
+			
+			body {
+				margin:0;
+				padding:0;
+				font-family: 'Segoe UI';
+			}
+			
+			#tag-set {
+				
+				
+			}
+			
+			#posts-list {
+				width: 600px;
+				height: 400px;
+				overflow-y:auto;
+			}
+		</style>
+		<script src="{{ STATIC_URL }}js/js_external/jquery.js" type="text/javascript"></script>
+		<script src="{{ STATIC_URL }}js/js_external/jquery-ui.js" type="text/javascript"></script>
+		<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"; var GROUP_ID = "{{ group_id }}"</script>
+		<script src="{{ STATIC_URL }}js/jsage/core.js" type="text/javascript"></script>
+		<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
+		<script src="{{ STATIC_URL }}js/ui/group-posts.js" type="text/javascript"></script>
+	</head>
+	<body>
+		<div>
+			<div>Категории текстов</div>
+			<div><span onclick="add_text_category()">Добавить новую: </span><input type="text" id="text-category-input"></div>
+			<div id="tag-set"></div>
+			<div id="posts-list">
+			</div>
+		</div>
+	</body>
+</html>
