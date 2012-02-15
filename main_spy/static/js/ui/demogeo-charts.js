@@ -1,5 +1,6 @@
 new Module('ui/demogeo-charts.js', ['jsage/baseui.js'], function() {
-
+$(document).ready(function () {
+	
 var time_now = Math.round(new Date().getTime() / 1000)
 	
 // demogeo snapshot
@@ -154,6 +155,9 @@ function draw_demogeo_charts(data_index) {
 }
 
 var demogeoSwitcher = jsage.OptionsList.create($("#demogeo_switcher")[0], [{label: 'всем участникам', data: 0}, {label: 'активной аудитории', data: 1}])
+$(demogeoSwitcher).bind("change", function(e) {
+	draw_demogeo_charts(e.target.get_selected())
+})
 
 function create_pie_chart(chart_desc) {
 	var schart = new Highcharts.Chart({
@@ -186,4 +190,5 @@ function create_pie_chart(chart_desc) {
 	chart_desc.chart = schart
 }	
 	
+})
 })

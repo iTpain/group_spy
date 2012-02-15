@@ -86,7 +86,7 @@ class PostsScanner(object):
         # cleansing
         for p in active_posts:
             if not p.pid in found_posts_ids:
-                print "Deleting probably spam post " + p.pid + " " + str(p.text)
+                print "Deleting probably spam post " + p.pid
                 p.delete()
     
     def update_user_activity_param_for_post(self, crawler, post, source, param_id):
