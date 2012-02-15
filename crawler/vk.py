@@ -168,7 +168,7 @@ class VKCrawler(object):
                     finished_flag = True
                 else:
                     for post in r:
-                        if filter_func (post):
+                        if filter_func(post):
                             yield post
                         else:
                             finished_flag = True

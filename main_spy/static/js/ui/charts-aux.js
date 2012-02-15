@@ -165,7 +165,9 @@ groupspy.MultiChoiceFilter = new jsage.Class('MultiChoiceFilter', [jsage.BaseUIO
 	set_chart: function(chart) {
 		var that = this
 		this.chart = chart
-		this.gui = jsage.CheckboxList.create(chart.get_container(), this.options)
+		var div = $("<div style='margin-left:10px; margin-top:10px;'></div>")[0]
+		this.gui = jsage.CheckboxList.create(div, this.options)
+		chart.get_container().appendChild(div)
 		$(this.gui).bind('change', function() { that.onchange() })
 	},
 	

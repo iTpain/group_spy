@@ -171,7 +171,7 @@ function create_pie_chart(chart_desc) {
 				"font-size": "14px",
 			},
 			align: "left",
-			x: 0,
+			x: -3,
 			margin: 0
 		},
 		plotOptions: {

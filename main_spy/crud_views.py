@@ -33,11 +33,14 @@ def update_group_info(request, group_id):
     return {}
 
 @json_response
-def get_posts(request, group_id, start, count):
+def get_posts(request, group_id, start, count, only_by_group):
     start = int(start)
     count = int(count)
-    posts = Post.objects.filter(group=group_id).order_by('-id')[start : start + count]
-    posts = [{'id': p.id, 'text': p.text, 'categories': [c.category.id for c in p.posttextcategoryassignment_set.all()]} for p in posts]
+    objects = Post.objects.filter(group=group_id)
+    if only_by_group == 'group':
+        objects = objects.filter(author_is_group=True)
+    posts = objects.order_by('-date')[start : start + count]
+    posts = [{'author': p.author.snid if p.author != None else None, 'id': p.id, 'text': p.text, 'date': str(p.date), 'categories': [c.category.id for c in p.posttextcategoryassignment_set.all()]} for p in posts]
     return posts
 
 @json_response

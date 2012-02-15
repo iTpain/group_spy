@@ -10,6 +10,8 @@
 
 body {
 	font-family: 'Segoe UI';
+	margin: 0;
+	padding: 0;
 }
 
 div.header {
@@ -23,7 +25,6 @@ span.emphasize {
 }
 
 #group_stats_snapshot {
-	margin-left: 6px;
 	font-family: 'Segoe UI';
 	width: 800px;
 	font-size:14px;
@@ -32,7 +33,9 @@ span.emphasize {
 
 div.snapshot-cell {
 	float: left;
-	margin: 3px 10px 10px 3px;
+	margin-right: 15px;
+	margin-top: 3px ;
+	margin-bottom: 3px;
 }
 
 span.snapshot-cell-value {
@@ -42,7 +45,6 @@ span.snapshot-cell-value {
 #group_stats_snapshot_header {
 	font-family: "Segoe UI";
 	font-size: 20px;
-	margin-left:10px;
 	margin-bottom: 15px;
 	margin-top:-9px;
 	color:#0066ff
@@ -93,7 +95,7 @@ div.chart_container {
 <div id="group_stats_snapshot"></div>
 <div id="group_users_chart" class="chart_container" style="clear: both"></div>
 <div class="chart_container"><div id="group_activity_chart"></div></div>
-<div class="chart_container"><div id="group_social_activity_dynamics"></div></div>
+<div class="chart_container" style="height:540px"><div id="group_social_activity_dynamics"></div></div>
 <div class="chart_container"><div id="social_activity_hourly_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_daily_stratified"></div></div>
 <div class="chart_container"><div id="social_activity_content_stratified"></div></div>

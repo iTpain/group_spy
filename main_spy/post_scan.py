@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import Post, Group, PostObservation, PostAttachment, LatestPostObservation, VKUser, VKUserSocialAction
+from group_spy.main_spy.models import Post, Group, PostObservation, PostAttachment, LatestPostObservation, User, UserSocialAction
 from datetime import datetime, timedelta
 import time
 from group_spy.logger.error import LogError
@@ -8,6 +8,10 @@ def iso_date_from_ts(ts):
     return datetime.fromtimestamp(ts).isoformat(' ')
 
 class PostsScanner(object):
+    
+    @staticmethod
+    def get_id():
+        return 'post_scan'
     
     _stats = ['likes', 'reposts', 'comments']
     
@@ -28,10 +32,20 @@ class PostsScanner(object):
                 Post.objects.get(pid=p['id'], group=gid)
                 break
             except Post.DoesNotExist:
-                now = iso_date_from_ts(time.time())
-                post_date = iso_date_from_ts(p['date'])
-                new_post = Post(pid=p['id'], date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
-                print "Post " + str(p['id']) + " added, date published: " + post_date
+                now = datetime.now()
+                post_date = datetime.fromtimestamp(p['date'])
+                author = None
+                if p['from_id'] != -int(gid):
+                    author_is_group = False
+                    try:
+                        author = User.objects.get(snid=p['from_id'])
+                    except User.DoesNotExist:
+                        author = User(snid=p['from_id'])
+                        author.save()
+                else:
+                    author_is_group = True
+                new_post = Post(pid=p['id'], author=author, author_is_group=author_is_group, date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
+                print "Post " + str(p['id']) + " added, date published: " + str(post_date) + " author: " + str(author) + " is group: " + str(author_is_group)
                 new_post.save()
                 for s in self._stats:
                     latest_obs = LatestPostObservation(post=new_post, statistics=s, value=0)
@@ -57,9 +71,11 @@ class PostsScanner(object):
         for p in active_posts:
             if p.date < min_time:
                 min_time = p.date
-        
-        timestamp = time.mktime(min_time.timetuple())
+        #some rounding or conversion error has occured rarely from putting post.date fetched from to database (1-2 secs)
+        timestamp = time.mktime(min_time.timetuple()) - 10
+        found_posts_ids = {}
         for p in crawler.get_posts_from_group("-" + gid, timestamp):
+            found_posts_ids[str(p['id'])] = True
             try:
                 post = (po for po in active_posts if str(po.pid) == str(p['id'])).next()
                 post_comments = [c for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id))]
@@ -67,6 +83,11 @@ class PostsScanner(object):
                 #self.update_user_activity_for_post(crawler, post, post_comments)
             except StopIteration:
                 continue
+        # cleansing
+        for p in active_posts:
+            if not p.pid in found_posts_ids:
+                print "Deleting probably spam post " + p.pid + " " + str(p.text)
+                p.delete()
     
     def update_user_activity_param_for_post(self, crawler, post, source, param_id):
         users_dict = list_to_quantity_dict(source)

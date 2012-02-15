@@ -2,6 +2,7 @@ from group_spy import settings
 from group_spy.utils.misc import get_credentials
 from group_spy.crawler.vk import VKCrawler
 from group_spy.logger.error import LogError
+from group_spy.main_spy.models import ScanStats
 from time import sleep;
 from datetime import datetime, timedelta
 import smtplib, gc
@@ -54,6 +55,8 @@ def launch(scanner_classes, scan_intervals):
                     seconds_passed = (time_after - time_before).total_seconds()
                     for i, v in enumerate(current_intervals):
                         current_intervals[i] = v - seconds_passed
+                    scan_stat = ScanStats(time_taken=seconds_passed, scanner_class = scanner_classes[index].get_id())
+                    scan_stat.save()
                     print "Scan completed in " + str(timedelta(seconds=seconds_passed))
                     print "Current timing: " + str(current_intervals)
                     print "Next scan scheduled in " + str(timedelta(seconds=max(0, current_intervals[index])))

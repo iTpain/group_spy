@@ -3,6 +3,7 @@ $(document).ready(function() {
 
 var time_now = Math.round(new Date().getTime() / 1000)
 var month_before = time_now - 31 * 24 * 3600
+var three_months_before = time_now - 93 * 24 * 3600
 var year_before = time_now - 364 * 24 * 3600
 
 function create_column_chart(series, params) {
@@ -121,7 +122,7 @@ var user_stats_snapshots_chart = groupspy.DataChartPresentation.create(
 		container: "group_users_chart",
 		width: 800,
 		height: 500,
-		title_x: 0,
+		title_x: -10,
 		title_margin: 50,
 		legend_y: -420,
 		range_selected: 0,
@@ -146,7 +147,7 @@ var social_stats_snapshots_chart = groupspy.DataChartPresentation.create(
 		container: "group_activity_chart",
 		width: 800,
 		height: 500,
-		title_x: 0,
+		title_x: -10,
 		title_margin: 50,
 		legend_y: -420,
 		range_selected: 0,
@@ -173,7 +174,7 @@ var social_stats_finals_chart = groupspy.DataChartPresentation.create(
 		container: "group_social_activity_dynamics",
 		width: 800,
 		height: 500,
-		title_x: 0,
+		title_x: -10,
 		title_margin: 50,
 		legend_y: -420,
 		range_selected: 0,
@@ -208,7 +209,7 @@ for (var i = 0, l = strata_charts.length; i < l; i++) {
 	var params = {
 		width: 800,
 		height: 500,
-		title_x: 0,
+		title_x: -10,
 		title_margin: 50
 	}
 	params.container = strata_charts[i].container

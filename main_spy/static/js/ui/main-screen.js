@@ -152,6 +152,11 @@ $("#methodology-help").bind("click", function (ev) {$.openDOMWindow({
 	width: 640,
 	height: 480
 })})
+$("#posts-help").bind("click", function (ev) {$.openDOMWindow({
+	windowSourceID: "#posts-helper",
+	width: 640,
+	height: 480
+})})
 
 function adjust_height() {
 	var h = $(window).height()
@@ -163,7 +168,7 @@ $(window).resize(adjust_height)
 adjust_height()
 
 // manager objects
-var ajaxOperationsManager = groupspy.AjaxOperationsManager.create()
+window.ajaxOperationsManager = groupspy.AjaxOperationsManager.create()
 
 // operations counter
 var opCounter1 = groupspy.OperationsCounter.create($("#operations-counter")[0])

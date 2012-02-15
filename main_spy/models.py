@@ -1,11 +1,27 @@
 from django.db import models
 
+class ScanStats(models.Model):
+    date = models.DateTimeField(auto_now=True, auto_now_add=True)
+    time_taken = models.BigIntegerField()
+    scanner_class = models.CharField(max_length=32)
+
 class TextCategory(models.Model):
     alias = models.CharField(max_length=256)
 
 class SocialNetwork(models.Model):
     snid = models.CharField(max_length=256)
     alias = models.CharField(max_length=256)
+
+class User(models.Model):
+    snid = models.BigIntegerField(db_index=True)
+    first_name = models.CharField(max_length=64, null=True)
+    last_name = models.CharField(max_length=64, null=True)
+    age = models.IntegerField(db_index=True, null=True)
+    education = models.IntegerField(null=True)
+    is_man = models.BooleanField()
+    city_alias = models.CharField(max_length=64, null=True)
+    last_scanned = models.DateTimeField(db_index=True, null=True)
+    social_network = models.ForeignKey(SocialNetwork, null=True)
 
 class Group(models.Model):
     gid = models.CharField(max_length=256)
@@ -18,6 +34,8 @@ class Group(models.Model):
 
 class Post(models.Model):
     pid = models.CharField(max_length=256)
+    author = models.ForeignKey(User, null=True)
+    author_is_group = models.BooleanField()
     date = models.DateTimeField(default=0)
     text = models.TextField()
     last_scanned = models.DateTimeField(auto_now=True, auto_now_add=True)
@@ -59,19 +77,9 @@ class DemogeoGroupObservation(models.Model):
     json = models.TextField()
     whole_group = models.BooleanField()
     
-class VKUser(models.Model):
-    vkid = models.BigIntegerField(db_index=True)
-    first_name = models.CharField(max_length=64)
-    last_name = models.CharField(max_length=64)
-    age = models.IntegerField(db_index=True)
-    education = models.IntegerField()
-    is_man = models.BooleanField()
-    city_alias = models.CharField(max_length=64)
-    last_scanned = models.DateTimeField(db_index=True)
-    
-class VKUserSocialAction(models.Model):
+class UserSocialAction(models.Model):
     post = models.ForeignKey(Post)
-    user = models.ForeignKey(VKUser)
+    user = models.ForeignKey(User)
     likes = models.IntegerField()
     comments = models.IntegerField()
     

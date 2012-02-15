@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from group_spy.main_spy.views_utils import json_response, request_vk_credentials
 from group_spy.utils.misc import get_credentials
 from django.shortcuts import render_to_response
@@ -5,8 +8,9 @@ from django.template import RequestContext
 from django.http import HttpResponse
 from group_spy import settings
 from group_spy.crawler.vk import VKCrawler
-from group_spy.main_spy.models import Group
-
+from group_spy.main_spy.models import Group, ScanStats, GroupObservation, Post
+from django.db.models import Avg
+import group_spy.settings
 import time
 from datetime import datetime, timedelta  
 
@@ -53,5 +57,33 @@ def group_posts(request, group_id):
 
 def groups_main(request):
     groups = Group.objects.all ()
-    return render_to_response ('groups.html', {'groups': groups}, context_instance=RequestContext(request))
+    
+    scanner_labels = ["Группы", "Посты"]
+    scanner_classes = ["group_scan", "post_scan"]
+    scanner_intervals = [settings.GROUPS_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL]
+    scanner_times = [ScanStats.objects.filter(scanner_class=sc).order_by("-date")[0:10].aggregate(Avg('time_taken'))['time_taken__avg'] for sc in scanner_classes]
+    scanner_times = [int(sc) if sc != None else 0 for sc in scanner_times]
+    scanner_timetable = [{
+        'color': True if scanner_intervals[index] < scanner_times[index] else False, 
+        'label': scanner_labels[index], 
+        'time': timedelta(seconds=scanner_times[index]), 
+        'interval': timedelta(seconds=scanner_intervals[index])} 
+        for index, s in enumerate(scanner_classes)]
+    
+    users_count = 0
+    for g in groups:
+        try:
+            users_in_group = GroupObservation.objects.filter(group=g.gid, statistics='total_users').latest("date").value
+        except GroupObservation.DoesNotExist:
+            users_in_group = 0
+        users_count += users_in_group
+        
+    velocity_per_second = 200
+    needed_per_second =  users_count / float(settings.GROUPS_SCAN_INTERVAL)
+    credentials_needed = int(needed_per_second / velocity_per_second) + 1
+   
+    valid_credentials_count = len(get_credentials())
+    return render_to_response ('groups.html', {'credentials_ok': valid_credentials_count >= credentials_needed, 
+            'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups, 
+            'credentials_count': valid_credentials_count, 'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
  

@@ -1,7 +1,7 @@
 from group_spy.main_spy.models import GroupObservation, Group, Post, DemogeoGroupObservation, LatestPostObservation
 from time import gmtime, strftime
 from group_spy.logger.error import LogError
-from datetime import datetime
+from datetime import datetime, timedelta
 from django.db.models import Sum
 import json
 
@@ -20,6 +20,10 @@ def compute_group_activity(active_posts):
 
 class GroupScanner(object):
     
+    @staticmethod
+    def get_id():
+        return 'group_scan'
+    
     BANNED_AVATARS = {"http://vkontakte.ru/images/deactivated_clo.png", "http://vkontakte.ru/images/deactivated_c.gif", "http://vk.com/images/deactivated_c.gif"}
     FACELESS_AVATARS = {"http://vkontakte.ru/images/question_a.gif", "http://vkontakte.ru/images/question_b.gif", "http://vkontakte.ru/images/question_c.gif", "http://vkontakte.ru/images/camera_a.gif", "http://vkontakte.ru/images/camera_b.gif", "http://vkontakte.ru/images/camera_c.gif"}
     
@@ -29,7 +33,9 @@ class GroupScanner(object):
         for g in groups:
             try:
                 print "Scanning group " + g.gid
-                active_posts = list(Post.objects.filter(closed=False, group=g.gid))
+                now = datetime.now()
+                print "Time now " + str(now)
+                active_posts = list(Post.objects.filter(closed=False, group=g.gid, date__lte=now - timedelta(hours=12)))
                 auditory_result = self.scan_auditory_activity(crawler, active_posts, g.gid)
                 print "auditory activity scanned"
                 users_result = self.scan_group_users(crawler, g.gid)
@@ -37,8 +43,6 @@ class GroupScanner(object):
                 activity_result = compute_group_activity(active_posts)
                 print "group activity scanned"
                 self.write_observations(g, dict(dict(users_result.items() + activity_result.items()).items() + auditory_result.items()))
-                print "observations written"
-                g.last_scanned = datetime.now()
                 print "Group " + g.gid + " successfully scanned"
             except Exception as e:
                 print e
@@ -180,10 +184,9 @@ class GroupScanner(object):
         return stratas        
         
     def write_observations(self, group, result):
-        now = strftime("%Y-%m-%d %H:%M:%S", gmtime())
         for (k, v) in result.iteritems():
-            obs = GroupObservation (group_id=group.gid, date=now, value=v, statistics=k)
+            obs = GroupObservation (group_id=group.gid, date=datetime.now(), value=v, statistics=k)
             print str(k) + ": " + str(v)
             obs.save ()
-        group.last_scanned = now
+        group.last_scanned = datetime.now()
         group.save ()     
