@@ -1,4 +1,4 @@
-new Module('ui/main_screen.js', ['ui/operations-counter.js', 'utils/async-operations.js'], function() {
+new Module('ui/main-screen.js', ['jsage/eventbus.js', 'ui/operations-counter.js', 'utils/async-operations.js'], function() {
 
 console.log("Main screen - group spy")
 
@@ -16,6 +16,7 @@ var screens_info = {
 }
 var current_screen = 'screen-stat'
 var group_shown = null
+var current_screen_shown = null
 
 $("#screen-select").bind("change", function (e) {
 	current_screen = e.target.value
@@ -32,7 +33,12 @@ function find_group_by_id(gid) {
 	
 function redrawFrame() {
 	if (group_shown != null) {
-		document.getElementById ("graphFrame").src = screens_info[current_screen].address + group_shown
+		if (current_screen_shown != null)
+			current_screen_shown.style.display = 'none'
+		current_screen_shown = document.getElementById('central-' + screens_info[current_screen].address)
+		current_screen_shown.style.display = 'block'
+		jsage.global_bus.trigger(groupspy.messages[screens_info[current_screen].address + '_frame_activate'], group_shown)
+		
 		$("div.group_asking_to_click")[0].style.display = "none"
 		if (curSelected != null) 
 			$(curSelected)[0].style.color = ""
@@ -161,8 +167,7 @@ $("#posts-help").bind("click", function (ev) {$.openDOMWindow({
 function adjust_height() {
 	var h = $(window).height()
 	$(".metro-scroll").height(h - 116)
-	$("#graphFrame").height(h - 116)
-	window.externalFrameHeight = h - 116
+	$("#stats-column").height(h - 116)
 }
 $(window).resize(adjust_height)
 adjust_height()

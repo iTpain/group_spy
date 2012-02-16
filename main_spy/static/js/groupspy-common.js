@@ -3,7 +3,9 @@ window.groupspy = {}
 var messages_list = [
 	'ajax_success',
 	'ajax_failure',
-	'active_ajax_count_changed'
+	'active_ajax_count_changed',
+	'group_frame_activate',
+	'posts_frame_activate'
 ]
 
 groupspy.messages = {}

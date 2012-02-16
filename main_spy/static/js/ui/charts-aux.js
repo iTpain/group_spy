@@ -27,7 +27,7 @@ groupspy.BaseDataTransformer = new jsage.Class('BaseDataTransformer', [], {
 	
 	params_changed: function(new_params) {
 		this.set_params(new_params)
-		this.chart.chart_data_fetched()
+		this.chart.transform_chart_data()
 	},
 	
 	set_params: function(new_params) {
@@ -101,7 +101,7 @@ groupspy.SlidingAverageDataTransformer = new jsage.Class('NormalizeDataTransform
 	},
 	
 	transform: function(data) {
-		if (this.params) {
+		if (this.params && data.length > 2) {
 			var l = data.length
 			var count = Math.round(l * this.coef)
 			var min_t = data[0][0]

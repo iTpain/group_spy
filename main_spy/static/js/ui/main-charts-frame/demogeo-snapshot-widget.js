@@ -1,4 +1,4 @@
-new Module('ui/demogeo-charts.js', ['jsage/baseui.js'], function() {
+new Module('ui/main-charts-frame/demogeo-snapshot-widget.js', ['jsage/baseui.js'], function() {
 $(document).ready(function () {
 	
 var time_now = Math.round(new Date().getTime() / 1000)
@@ -123,21 +123,6 @@ var demo_descriptions = [
 	{container: 'woman_age_snapshot_chart', width: 400, height: 400, title: 'Распределение женщин по возрасту', size: 200}
 ]
 
-$.ajax({
-	url: '/group' + GROUP_ID + '/latest_demogeo_snapshot/' + time_now + '/',
-	success: function (data) {
-		data = data.response			
-		arrays_to_percents(data.whole_group.geo, data.active_users.geo)
-		geo_chart_desc.initial_data = [data.whole_group.geo, data.active_users.geo]
-		
-		var demo_data = [data.whole_group.demo, data.active_users.demo]
-		for (var i = 0, l = demo_descriptions.length; i < l; i++) {
-			demo_descriptions[i].initial_data = demo_data
-		}
-		draw_demogeo_charts(0)
-	}
-});
-
 function draw_demogeo_charts(data_index) {
 	geo_chart_desc.data = geo_chart_desc.initial_data[data_index]
 	if (geo_chart_desc.chart)
@@ -189,6 +174,40 @@ function create_pie_chart(chart_desc) {
 	});	
 	chart_desc.chart = schart
 }	
+
+groupspy.DemogeoSnapshotWidget = new jsage.Class('DemogeoSnapshotWidget', [], {
+	
+	init: function() {
+		this.ajax_token = null
+	},
+	
+	set_group: function(gid) {
+		var that = this
+		var token = this.ajax_token = gid
+		for (var i = 0, l = demo_descriptions.length; i < l; i++)
+			if ('chart' in demo_descriptions[i])
+				demo_descriptions[i].chart.showLoading()
+		if ('chart' in geo_chart_desc)
+			geo_chart_desc.chart.showLoading()
+		$.ajax({
+			url: '/group' + gid + '/latest_demogeo_snapshot/' + time_now + '/',
+			success: function (data) {
+				if (that.ajax_token != token)
+					return
+				data = data.response			
+				arrays_to_percents(data.whole_group.geo, data.active_users.geo)
+				geo_chart_desc.initial_data = [data.whole_group.geo, data.active_users.geo]
+				
+				var demo_data = [data.whole_group.demo, data.active_users.demo]
+				for (var i = 0, l = demo_descriptions.length; i < l; i++) {
+					demo_descriptions[i].initial_data = demo_data
+				}
+				draw_demogeo_charts(demogeoSwitcher.get_selected())
+			}
+		});		
+	}
+	
+})
 	
 })
 })

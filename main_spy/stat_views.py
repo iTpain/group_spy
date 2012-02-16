@@ -38,9 +38,11 @@ def get_series_from(objects, time_start, time_end):
 
 def choose_quanta(interval):
     if interval > timedelta(days=365):
-        return timedelta(days=30)
-    elif interval > timedelta(days=30):
+        return timedelta(days=3)
+    elif interval > timedelta(days=90):
         return timedelta(days=1)
+    elif interval > timedelta(days=30):
+        return timedelta(hours=3)
     else:
         return timedelta(hours=1)
     
@@ -63,29 +65,46 @@ def pointwise_extract(objects, quanta, time_start, time_end):
         else:
             prepped_data.append([1000 * time.mktime(obs[0].date.timetuple()), obs[0].value])
             current_time = obs[0].date + quanta
-            if current_time > time_end and not first_intersection_flag:
-                current_time = time_end
-                first_intersection_flag = True
-    try:
-        latest = objects.filter(date__lte=current_time).latest("date")
-        latest_time = 1000 * time.mktime(latest.date.timetuple())
-        if len(prepped_data) == 0 or latest_time != prepped_data[len(prepped_data) - 1][0]:
-            prepped_data.append([latest_time, latest.value])
-    except:
-        pass
+    #try:
+    #    latest = objects.filter(date__lte=current_time).latest("date")
+    #    latest_time = 1000 * time.mktime(latest.date.timetuple())
+    #    if len(prepped_data) == 0 or latest_time != prepped_data[len(prepped_data) - 1][0]:
+    #        prepped_data.append([latest_time, latest.value])
+    #except:
+    #    pass
     return prepped_data
 
 
 def wholesale_extract(objects, quanta, time_start, time_end):
     all_data = list(objects.filter(date__gte=time_start, date__lte=time_end))
-    if len(all_data) == 0:
+    try:
+        start_data = objects.filter(date__lte=time_start).latest("date")
+        start_value = start_data.value
+    except:
+        start_value = 0
+    data_len = len(all_data)
+    if data_len < 2:
         return []
     current_time = time_start
     prepped_data = []
-    for obs in all_data:
-        if obs.date >= current_time:
-            prepped_data.append([1000 * time.mktime(obs.date.timetuple()), obs.value])
-            current_time = obs.date + quanta
+    last_index_greater = 0
+    while current_time < time_end + quanta:
+        if current_time > time_end:
+            current_time = time_end
+        for index in range(last_index_greater, data_len):
+            if all_data[index].date >= current_time:
+                break
+        last_index_greater = index
+        if last_index_greater == 0 and all_data[last_index_greater].date > current_time:
+            value = start_value
+        else:
+            value = all_data[last_index_greater].value 
+        if current_time == time_start or current_time == time_end:
+            data_time = current_time
+        else:
+            data_time = all_data[last_index_greater].date
+        prepped_data.append([1000 * time.mktime(data_time.timetuple()), value])
+        current_time += quanta
     return prepped_data
     
     
@@ -94,7 +113,7 @@ def get_extraction_method_for_interval(interval, quanta):
     seconds_in_quanta = quanta.total_seconds()
     approximate_selects = seconds_in_interval / seconds_in_quanta
     approximate_observations = seconds_in_interval / timedelta(hours=1).total_seconds()
-    if approximate_observations > 10 * approximate_selects:
+    if approximate_observations > 100000 * approximate_selects:
         return pointwise_extract
     else:
         return wholesale_extract

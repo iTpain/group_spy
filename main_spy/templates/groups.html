@@ -1,234 +1,23 @@
 ﻿<!doctype html>
 <html>
 <head>
-<title>Group spy</title>
-<style>
-@font-face {
-	font-family: 'Segoe UI';
-	src: url('{{ STATIC_URL }}fonts/segoeuil.ttf');
-}
-
-body {
-	margin: 0px;
-	padding: 0px;
-	font-family: 'Segoe UI';
-	min-width:1800px;
-	overflow-x:auto;
-	overflow-y:hidden;
-}
-
-div.header {
-	font-family: 'Segoe UI';
-	font-size: 24px;
-	padding-bottom: 20px;
-	color: #ff6600
-}
-
-span.emphasize {
-	color: #ff6600;
-}
-
-div.emphasize {
-	color: #ff6600;
-}
-
-div.group {
-	font-family: 'Segoe UI';
-	font-size: 20px;
-	margin-bottom: 10px;
-}
-
-span.group_alias:hover {
-	color: #ff6600;
-	cursor: pointer;
-}
-
-span.group_delete {
-	color: red;
-	margin-left: 12px;
-	vertical-align: 1px;
-	font-size: 16px;
-	cursor:pointer;
-}
-
-div.column {
-	float: left;
-	margin-top: 15px;
-}
-
-div.metro-scroll {
-	overflow-y:auto;
-}
-
-a.group_href {
-	font-size: 14px;
-	color:#808080;
-	margin: 0;
-	padding: 0;
-}
-
-div.group_href {
-	margin-top: -8px;
-}
-
-div.group_info {
-	font-size: 14px;
-	color:#808080;	
-}
-
-div.group_asking_to_click {
-	font-family: "Segoe UI";
-	font-size: 20px;
-	margin-top:-1px;
-}
-
-.pointer {
-	cursor: pointer;
-}
-
-.underline {
-	text-decoration: underline;
-}
-
-div.second-column-header {
-
-}
-
-div.group_info span {
-	cursor: pointer;
-}
-
-#group_info_updater {
-	width: 100%;
-	height: 50px;
-	display: none;
-	background: white;
-	font-family: "Segoe UI";
-}
-
-div.group_updater_header {
-	font-size: 20px;
-	margin-bottom: 10px;
-}
-
-div.group_updater_update_button {
-	margin-top: 10px;
-	font-size: 18px;
-	color: #ff6600;
-	cursor: pointer;
-}
-
-div.group_info_cell {
-	margin-top: 8px;
-	margin-bottom: 8px;
-}
-
-#group_updater_header {
-	color: #ff6600;
-}
-
-div.inline {
-	display: inline;
-}
-
-#methodology-helper {
-	width: 640px;
-	height: 480px;
-	display: none;
-	background: white;
-	font-family: "Segoe UI";
-}
-
-#posts-helper {
-	width: 640px;
-	height: 480px;
-	display: none;
-	background: white;
-	font-family: "Segoe UI";
-}
-
-span.helper-span {
-	font-size:14px;
-	vertical-align:10px;
-	margin-left:5px;
-	cursor:pointer;	
-}
-
-#group-list-column {
-	margin-left:1%;
-	width: 20%;
-}
-
-#stats-column {
-	margin-left:6%;
-	width: 47%;
-	margin-right:5%;
-	/*overflow-y:hidden !important;*/
-}
-
-#system-column {
-	width: 20%;
-	margin-right:1%;
-	font-size:14px;
-	line-height:25px;
-}
-
-#control_div {
-	position:fixed;
-	background:#444444;
-	bottom:0px;
-	width:100%;
-	min-width:800px;
-	height:50px;
-}
-
-#control_div div {
-	margin-top: 6px;
-	color:white;
-	float:left;
-}
-
-#addgroup_div {
-	margin-left:20px;
-}
-
-#screen-select-div {
-	margin-left:50px;
-}
-
-#operations-counter {
-	position: absolute;
-	right: 10px;
-}
-
-#graphFrame {
-	padding: 0;
-	margin: 0;
-}
-
-div.system-column-subheader {
-	font-size:18px;
-	color:#ff6600;
-	margin-bottom:7px;
-}
-
-span.system-column-number {
-	font-size:18px;
-}
-
-</style>
-<script>
-var groups_info = [
-	0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}
-]
-groups_info.shift()
-</script>
-<script src="{{ STATIC_URL }}js/js_external/jquery.js"></script>
-<script src="{{ STATIC_URL }}js/js_external/jquery.DOMWindow.js"></script>
-<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
-<script src="{{ STATIC_URL }}js/jsage/core.js"></script>
-<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
-<script src="{{ STATIC_URL }}js/ui/main-screen.js"></script>
+	<title>Group spy</title>
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css"/>
+	<script>
+		var groups_info = [0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}]
+		groups_info.shift()
+	</script>
+	<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
+	<script src="{{ STATIC_URL }}js/js_external/jquery.js"></script>
+	<script src="{{ STATIC_URL }}js/js_external/jquery-ui.js"></script>
+	<script src="{{ STATIC_URL }}js/js_external/jquery.DOMWindow.js"></script>
+	<script src="{{ STATIC_URL }}js/js_external/highcharts.js" type="text/javascript"></script>
+	<script src="{{ STATIC_URL }}js/js_external/highstock.js" type="text/javascript"></script>
+	<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
+	<script src="{{ STATIC_URL }}js/jsage/core.js"></script>
+	<script src="{{ STATIC_URL }}js/ui/main-screen.js"></script>
+	<script src="{{ STATIC_URL }}js/ui/main-charts-frame/main-charts-frame.js"></script>
+	<script src="{{ STATIC_URL }}js/ui/posts-frame.js"></script>
 </head>
 <body>
 <div>
@@ -293,7 +82,57 @@ groups_info.shift()
 			<div id="screen-query-header" style="display:none">Сложные запросы</div>
 		</div>
 		<div class="group_asking_to_click second-column-header">Выберите группу из списка слева</div>
-		<iframe frameborder="no" id="graphFrame" width="100%"></iframe>
+		<div style='width:100%; height:100%; overflow-y:auto'>
+			<div id="central-group" style='display:none;'>
+				<div id="group_stats_snapshot_header">Значения основных показателей сейчас</div>
+				<div id="group_stats_snapshot"></div>
+				<div id="group_users_chart" class="chart_container" style="clear: both"></div>
+				<div class="chart_container"><div id="group_activity_chart"></div></div>
+				<div class="chart_container" style="height:540px"><div id="group_social_activity_dynamics"></div></div>
+				<div class="chart_container"><div id="social_activity_hourly_stratified"></div></div>
+				<div class="chart_container"><div id="social_activity_daily_stratified"></div></div>
+				<div class="chart_container"><div id="social_activity_content_stratified"></div></div>
+				<div id="demogeo_container">
+					<div id="demogeo_snapshot_header">Демографическая и географическая статистики</div>
+					<div id="demogeo_switcher"></div>
+					<table>
+						<tr>
+							<td>
+								<div id="geo_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+							<td>
+								<div id="age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div id="man_age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+							<td>
+								<div id="woman_age_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<div id="sex_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+							<td>
+								<div id="education_snapshot_chart" style="width: 400px; height: 400px;"></div>
+							</td>
+						</tr>
+					</table>
+				</div>
+			</div>
+			<div id="central-posts" style='display:none;'>
+				<div class="big-header">Категории текстов</div>
+				<div id="tag-set"></div>
+				<div class='text-category-adder'><span class="text-category-adder" onclick="add_text_category()">Добавить</span> новую: <input type="text" id="text-category-input"></div>
+				<div id="header">Посты</div>
+				<div id="filter-box">только от имени группы: <input type="checkbox"/></div>
+				<div id="posts-list">
+				</div>
+			</div>
+		</div>
 	</div>
 	<div class="column" id="system-column">
 		<div class="header second-column-header" id="stats-header">Состояние системы</div>

@@ -10,8 +10,6 @@ urlpatterns = patterns('',
     url(r'crossdomain.xml', 'main_spy.views.crossdomainXML'),
     url(r'credentials/update/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/(?P<sid>[A-Za-z0-9_]+)/(?P<secret>[A-Za-z0-9_]+)/$', 'main_spy.views.receive_vk_credentials'),
     url(r'groups/$', 'main_spy.views.groups_main'),
-    url(r'posts(?P<group_id>\d+)/$', 'main_spy.views.group_posts'),
-    url(r'group(?P<group_id>\d+)/$', 'main_spy.views.group_status'),
     
     url(r'group(?P<group_id>\d+)/add/$', 'main_spy.crud_views.add_group'),
     url(r'group(?P<group_id>\d+)/delete/$', 'main_spy.crud_views.delete_group'),   

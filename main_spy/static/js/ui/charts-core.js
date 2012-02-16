@@ -27,9 +27,11 @@ groupspy.DefaultTimeFilter = new jsage.Class('DefaultTimeFilter', [], {
 
 groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 	
-	previous_filters_results: [],
-	
 	init: function(series_description, data_transformers, data_filters, chart_options, chart_constructor, data_url) {
+		this.chart_options = chart_options
+		this.previous_filters_results = []
+		this.prev_data_url = null
+		this.ajax_token = 0
 		var that = this
 		chart_options.on_chart_range_select = function (t1, t2) { that.chart_range_selected(t1, t2) }
 		this.chart = chart_constructor(series_description, chart_options)
@@ -37,7 +39,7 @@ groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 		var series_ids = {}
 		for (i = 0, l = series_description.length; i < l; i++)
 			series_ids[series_description[i].id] = true
-		this.series = groupspy.DataSeriesGroup.create(series_ids, function () { that.chart_data_fetched() })
+		this.series = groupspy.DataSeriesGroup.create(series_ids, this, function (token) { that.chart_data_fetched(token) })
 		
 		this.data_transformers = data_transformers.slice()
 		for (var i = 0, l = data_transformers.length; i < l; i++) {
@@ -49,7 +51,6 @@ groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 			this.previous_filters_results[i] = null
 		}
 		this.data_url = data_url
-		this.fetch_chart_data()
 	},
 	
 	get_container: function() {
@@ -66,12 +67,35 @@ groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 			this.previous_filters_results[i] = path[i]
 		}
 		var filters_path = path.join("/") + "/"
-		if (clean_required)
+		if (clean_required || this.data_url != this.previous_data_url) {
 			this.series.clean()
-		this.series.update(this.data_url + filters_path)
+			this.ajax_token++
+		}
+		this.previous_data_url = this.data_url
+		if (this.series.update(this.data_url + filters_path, this.ajax_token)) {
+			this.chart.showLoading()
+		}
 	},
 	
-	chart_data_fetched: function() {
+	reset_axis_extremes: function() {
+		if ('axis_x_min' in this.chart_options) {
+			this.chart.xAxis[0].setExtremes(this.chart_options.axis_x_min, this.chart_options.axis_x_max)
+		}
+	},
+	
+	valid_token: function(token) {
+		return this.ajax_token == token
+	},
+	
+	chart_data_fetched: function(token) {
+		if (token != this.ajax_token) {
+			return
+		}
+		this.chart.hideLoading()
+		this.transform_chart_data()
+	},
+	
+	transform_chart_data: function() {
 		for (var i = 0, l = this.series_description.length; i < l; i++) {
 			var desc = this.series_description[i]
 			var id = desc.id
@@ -79,7 +103,7 @@ groupspy.DataChartPresentation = new jsage.Class('DataChartPresentation', [], {
 			for (var j = 0, lj = this.data_transformers.length; j < lj; j++)
 				data = this.data_transformers[j].transform(data)
 			this.chart.series[desc.index].setData(data)
-		}
+		}		
 	},
 	
 	chart_range_selected: function(t1, t2) {
@@ -96,7 +120,8 @@ groupspy.DataSeriesGroup = new jsage.Class('DataSeriesGroup', [], {
 	
 	last_url_requested: null,
 	
-	init: function(series_ids, update_callback) {
+	init: function(series_ids, parent, update_callback) {
+		this.parent = parent
 		this.update_callback = update_callback
 		this.series = {}
 		for (var id in series_ids)
@@ -107,20 +132,25 @@ groupspy.DataSeriesGroup = new jsage.Class('DataSeriesGroup', [], {
 		return this.series[id].get_data_copy()
 	},
 	
-	update: function(url) {
+	update: function(url, token) {
 		var that = this
 		if (url != this.last_url_requested) {
 			this.last_url_requested = url
 			$.ajax({
 				url: url,
 				success: function(response) {
+					if (!that.parent.valid_token(token))
+						return
 					for (var id in that.series) {
 						var data = response.response[id].series
 						that.series[id].receive_update(data)
 					}
-					that.update_callback()
+					that.update_callback(token)
 				}
 			})
+			return true
+		} else {
+			return false
 		}
 	},
 	

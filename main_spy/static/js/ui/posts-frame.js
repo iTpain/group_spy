@@ -1,10 +1,9 @@
-new Module('ui/group-posts.js', ['jsage/mvc.js', 'jsage/baseui.js'], function() {
+new Module('ui/group-posts.js', ['jsage/mvc.js', 'jsage/baseui.js', 'jsage/eventbus.js', 'ui/main-screen.js'], function() {
 	
 $(document).ready(function () {
 
 // parent window classes
-var ajax_operations_manager = window.parent.ajaxOperationsManager
-console.log(ajax_operations_manager)
+var ajax_operations_manager = window.ajaxOperationsManager
 
 // view classes
 var TextCategoryCell = new jsage.Class('TextCategoryCell', [jsage.BaseView, jsage.BaseUIObject], {	
@@ -258,14 +257,23 @@ function get_posts_fetcher(filter, collection) {
 	var posts_loaded = 0
 	var no_more_posts = false
 	var posts_loading = false
-	
+	var last_group_id = 0
 	
 	return function () {
+		if (last_group_id != GROUP_ID) {
+			posts_loaded = 0
+			no_more_posts = false
+			last_group_id = GROUP_ID
+			posts_loading = false
+		}
+		var token = GROUP_AJAX_TOKEN
 		if (!no_more_posts && !posts_loading) {
 			posts_loading = true
 			$.ajax({
 				url: 'group' + GROUP_ID + '/posts/' + posts_loaded + '/100/' + filter + '/',
 				success: function(response) {
+					if (token != GROUP_AJAX_TOKEN)
+						return
 					var data = response.response
 					var added = []
 					var filtered_added = []
@@ -313,23 +321,6 @@ $("#posts-list").scroll(function(e) {
 	}
 })
 
-// initial data load
-$.ajax({
-	url: 'group' + GROUP_ID + '/category/get_all/',
-	success: function(response) {
-		data = response.response
-		var elements = []
-		for (var i = 0, l = data.length; i < l; i++) {
-			var tag = text_category_set.create_entity(data[i].id, {alias: data[i].alias})
-			elements.push(tag)
-		}
-		text_category_collection.add(elements)
-		adjust_height()
-		all_posts_loader()
-		group_posts_loader()
-	}	
-})
-
 // external functions
 window.add_text_category = function() {
 	add_text_category_command()
@@ -343,10 +334,51 @@ $("#filter-box input").bind("change", function(e) {
 function adjust_height () {
 	var h = $(window).height()
 	var tags_h = $("#tag-set").height()
-	$("#posts-list").css({'height': Math.max(0, h - tags_h - 171) + "px"})
+	$("#posts-list").css({'height': Math.max(0, h - tags_h - 275) + "px"})
 }
 $(window).resize(adjust_height)
 adjust_height()
+
+// fucking widget itself
+var GROUP_ID = 0
+var GROUP_AJAX_TOKEN = 0
+groupspy.PostsFrame = new jsage.Class('PostsFrame', [jsage.GlobalMessagingObject], {
+	
+	init: function() {
+		this.subscribe(groupspy.messages.posts_frame_activate, this.on_activate)
+	},
+	
+	on_activate: function(gid) {
+		GROUP_ID = gid
+		var token = ++GROUP_AJAX_TOKEN
+		post_collection.remove_all()
+		filtered_post_collection.remove_all()
+		text_category_collection.remove_all()
+		post_set.hard_clear()
+		post_category_relation_set.hard_clear()
+		text_category_set.hard_clear()		
+		$.ajax({
+			url: 'group' + GROUP_ID + '/category/get_all/',
+			success: function(response) {
+				if (token != GROUP_AJAX_TOKEN)
+					return
+				data = response.response
+				var elements = []
+				for (var i = 0, l = data.length; i < l; i++) {
+					var tag = text_category_set.create_entity(data[i].id, {alias: data[i].alias})
+					elements.push(tag)
+				}
+				text_category_collection.add(elements)
+				adjust_height()
+				all_posts_loader()
+				group_posts_loader()
+			}	
+		})
+	}
+	
+})
+
+var widget = groupspy.PostsFrame.create()
 
 	
 })		

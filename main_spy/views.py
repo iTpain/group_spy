@@ -48,12 +48,6 @@ def receive_vk_credentials(request, api_id, secret, sid, viewer_id):
             return {'errors': ["Failed to save credentials file"]}
     else:
         return {'errors': ["Credentials test has failed"]}
-       
-def group_status(request, group_id):
-    return render_to_response ('group_status.html', {'group_id': group_id}, context_instance=RequestContext(request))
-
-def group_posts(request, group_id):
-    return render_to_response ('posts.html', {'group_id': group_id}, context_instance=RequestContext(request))
 
 def groups_main(request):
     groups = Group.objects.all ()
