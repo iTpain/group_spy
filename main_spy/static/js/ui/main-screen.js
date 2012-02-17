@@ -1,4 +1,4 @@
-new Module('ui/main-screen.js', ['jsage/eventbus.js', 'ui/operations-counter.js', 'utils/async-operations.js'], function() {
+new Module('ui/main-screen.js', ['jsage/eventbus.js', 'ui/operations-counter.js', 'utils/async-operations.js', 'ui/group-comparison.js'], function() {
 
 console.log("Main screen - group spy")
 
@@ -23,7 +23,7 @@ $("#screen-select").bind("change", function (e) {
 	redrawFrame()
 })
 
-function find_group_by_id(gid) {
+window.find_group_by_id = function(gid) {
 	for (var i = 0, l = groups_info.length; i < l; i++) {
 		if (gid == groups_info[i].gid)
 			return groups_info[i]
@@ -111,13 +111,14 @@ window.addGroup = function () {
 			} else {
 				res = res.response
 				var div = $('<div class="group" id="group_div_' + res.gid + '">' +
-							'<div class="group_header"><span class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</span><span onclick="deleteGroup(' + res.gid + ')" class="group_delete" style="display:none">x</span></div>' +
+							'<div data-group-id="' + res.gid + '" class="group_header"><span class="group_alias" id="group_alias_' + res.gid + '" onclick="showGroup(' + res.gid + ')">' + res.alias + '</span><span onclick="deleteGroup(' + res.gid + ')" class="group_delete" style="display:none">x</span></div>' +
 							'<div class="group_info"><span id="group_minor_info_' + res.gid + '" onclick="show_dialog(\'group_info_updater\', [' + res.gid + '])"><span id="group_agency_span_'+res.gid+'">агентство не указано</span> - <span id="group_brand_span_'+res.gid+'">бренд не указан</span></span></div>' +
 							'<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club' + res.gid + '">http://vkontakte.ru/club' + res.gid + '</a></div>' +
 							'</div>')[0]
 				$("#groups-list")[0].appendChild (div);
 				groups_mouse_interaction_bindage()
 				groups_info.push({gid: res.gid, alias: res.alias, agency: '', brand: ''})
+				jsage.global_bus.trigger(groupspy.messages.group_added, div)
 				return true
 			}
 		},
@@ -182,13 +183,8 @@ var opCounter1 = groupspy.OperationsCounter.create($("#operations-counter")[0])
 var errorsPanel = jsage.ErrorPanel.create(10, 5000, [groupspy.messages.ajax_failure])
 $("body")[0].appendChild(errorsPanel.elements.container)
 
-// test
-function bad_op () {
-	ajaxOperationsManager.do_operation('http://localhos:8000/groups/', 'get', null, function (){ return true }, null, {description: 'simple operation'})
-	setTimeout (bad_op, 1000 + 1000 * Math.random())
-}
-//bad_op()
-
+// group comparison
+// var group_comparison = groupspy.GroupComparisonBase.create()
 
 })
 })

@@ -1,22 +1,26 @@
 @font-face {
-	font-family: 'Segoe UI';
-	src: url('../fonts/segoeuil.ttf');
+	font-family:'Segoe UI';
+	src:url('../fonts/segoeuil.ttf');
 }
 
 body {
 	margin: 0px;
 	padding: 0px;
-	font-family: 'Segoe UI';
 	min-width:1800px;
 	overflow-x:auto;
 	overflow-y:hidden;
+	font-family:"Segoe UI"
 }
 
 div.header {
-	font-family: 'Segoe UI';
 	font-size: 24px;
 	padding-bottom: 20px;
 	color: #ff6600
+}
+
+span.small-header {
+	font-size: 18px;
+	color: #ff6600	
 }
 
 span.emphasize {
@@ -24,6 +28,10 @@ span.emphasize {
 }
 
 div.emphasize {
+	color: #ff6600;
+}
+
+.emphasize {
 	color: #ff6600;
 }
 
@@ -152,6 +160,10 @@ span.helper-span {
 #group-list-column {
 	margin-left:1%;
 	width: 20%;
+}
+
+#groups-list {
+	position: relative;
 }
 
 #stats-column {
@@ -354,4 +366,9 @@ div.post-text {
 
 #filter-box input {
 	vertical-align:-2px;
+}
+
+#group-comparison {
+	width:1024px;
+	display:none;
 }

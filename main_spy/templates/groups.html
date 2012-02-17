@@ -56,6 +56,25 @@
 		<p>Для графиков со стратификацией по времени значение соц. показателей суммируется для всех постов с датой публикации, попадающей в данную страту (например, с 10 до 11 часов). Показатели считаются для всех постов,
 		опубликованных не позднее одного месяца назад</p>
 	</div>
+	<div id="group-comparison">
+		<div><span class="small-header" id="gc-alias-1"></span><span style="margin-left:10px; margin-right:10px;"> vs </span><span class="small-header" id="gc-alias-2"></span></div>
+		<div>
+			<table>
+				<tr>
+					<td><div id="gc-dynamics-chart-container"></div></td>
+					<td><div id="gc-dynamics-chart-filter"></div></td>
+				</tr>
+			</table>
+		</div>
+		<div id="gc-demogeo-container">
+			<table>
+				<tr>
+					<td><div id="gc-demogeo-chart"></div></td>
+					<td><div id="gc-demogeo-table"></div></td>
+				</tr>
+			</table>
+		</div>
+	</div>
 	<div id="posts-helper">
 		<h2>Редактирование и удаление категорий</h2>
 		<p>Двойной клик по тэгу вводит его в режим редактирования, кнопка ОК сохраняет изменения, крест удаляет тэг</p>
@@ -68,7 +87,7 @@
 		<div class="metro-scroll" id="groups-list">
 			{% for g in groups %}
 			<div class="group" id="group_div_{{ g.gid }}">
-				<div class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
+				<div data-group-id="{{ g.gid }}" class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
 				<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])"><span id="group_agency_span_{{g.gid}}">{% if g.agency|length_is:0 %}Агентство не указано{% else %}{{g.agency}}{% endif %}</span> - <span id="group_brand_span_{{g.gid}}">{% if g.brand|length_is:0 %}Бренд не указан{% else %}{{g.brand}}{% endif %}</span></span></div>
 				<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
 			</div>

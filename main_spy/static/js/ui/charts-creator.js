@@ -24,7 +24,8 @@ window.create_column_chart = function(series, params) {
 			},
 			align: "left",
 			x: params.title_x,
-			margin: params.title_margin
+			margin: params.title_margin,
+			floating: params.title_floating || false
 		},
 		xAxis: { categories: params.axis_x_categories },
 		yAxis: { min: 0 },

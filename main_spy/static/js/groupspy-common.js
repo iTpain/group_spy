@@ -5,7 +5,9 @@ var messages_list = [
 	'ajax_failure',
 	'active_ajax_count_changed',
 	'group_frame_activate',
-	'posts_frame_activate'
+	'posts_frame_activate',
+	'group_added',
+	'group_removed'
 ]
 
 groupspy.messages = {}
