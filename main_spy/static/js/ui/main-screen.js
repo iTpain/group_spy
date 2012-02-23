@@ -184,7 +184,7 @@ var errorsPanel = jsage.ErrorPanel.create(10, 5000, [groupspy.messages.ajax_fail
 $("body")[0].appendChild(errorsPanel.elements.container)
 
 // group comparison
-// var group_comparison = groupspy.GroupComparisonBase.create()
+var group_comparison = groupspy.GroupComparisonBase.create()
 
 })
 })

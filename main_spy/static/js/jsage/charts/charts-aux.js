@@ -1,4 +1,4 @@
-new Module('ui/charts-aux.js', ['jsage/baseui.js'], function(){
+new Module('jsage/charts/charts-aux.js', ['jsage/baseui.js'], function(){
 
 groupspy.LabeledCheckbox = new jsage.Class('LabeledCheckbox', [jsage.BaseUIObject], {
 	
@@ -153,7 +153,9 @@ groupspy.SlidingAverageDataTransformer = new jsage.Class('NormalizeDataTransform
 
 groupspy.MultiChoiceFilter = new jsage.Class('MultiChoiceFilter', [jsage.BaseUIObject], {
 	
-	clean_required: true,
+	invalidating: function() {
+		return true
+	},
 	
 	init: function(options, labels) {
 		var zipped = []

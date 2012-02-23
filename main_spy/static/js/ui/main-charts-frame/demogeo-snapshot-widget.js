@@ -13,15 +13,16 @@ function arrays_to_percents() {
 	}
 }
 
-function absolute_to_percents_in_array(arr) {
+window.absolute_to_percents_in_array = function(arr) {
 	var sum = 0
 	for (var i = 0, l = arr.length; i < l; i++)
 		sum += arr[i][1]
 	for (i = 0; i < l; i++)
 		arr[i][1] *= 100 / sum
+	return arr
 }
 
-function create_demo_stratas(data, params, filters) {
+window.create_demo_stratas = function(data, params, filters) {
 	function cannot_distinguish(p1, p2) {
 		for (var e in p1) {
 			var stratas = params[e]

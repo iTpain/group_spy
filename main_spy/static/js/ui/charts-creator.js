@@ -59,7 +59,7 @@ window.create_line_chart = function(series, params) {
 			selected: params.range_selected
 		},
 		legend: {
-			enabled: true,
+			enabled: !params.legend_disabled,
 			y: params.legend_y,
 			align: 'left',
 			floating: true
