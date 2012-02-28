@@ -1,6 +1,8 @@
 from group_spy.main_spy.views_utils import json_response, request_vk_credentials
 from group_spy.main_spy.models import Group, TextCategory, PostTextCategoryAssignment, Post
+from django.contrib.auth.decorators import login_required
 
+@login_required
 @json_response
 @request_vk_credentials
 def add_group(request, group_id, crawler):
@@ -15,7 +17,8 @@ def add_group(request, group_id, crawler):
         return {'gid': group_id, 'alias': group_name}
     except:
         return {'errors': ['Failed to save group']}
-    
+
+@login_required   
 @json_response
 def delete_group(request, group_id):
     try:
@@ -23,7 +26,8 @@ def delete_group(request, group_id):
         return {}
     except:
         return {'errors': ['Failed to delete group']}
-    
+
+@login_required   
 @json_response
 def update_group_info(request, group_id):
     group = Group.objects.get(gid=group_id)
@@ -32,6 +36,7 @@ def update_group_info(request, group_id):
     group.save()
     return {}
 
+@login_required
 @json_response
 def get_posts(request, group_id, start, count, only_by_group):
     start = int(start)
@@ -43,11 +48,13 @@ def get_posts(request, group_id, start, count, only_by_group):
     posts = [{'author': p.author.snid if p.author != None else None, 'id': p.id, 'text': p.text, 'date': str(p.date), 'categories': [c.category.id for c in p.posttextcategoryassignment_set.all()]} for p in posts]
     return posts
 
+@login_required
 @json_response
 def get_text_categories(request, group_id):
     group = Group.objects.get(gid=group_id)
     return [{'id': c.id, 'alias': c.alias} for c in group.text_categories.all()]
 
+@login_required
 @json_response
 def add_text_category(request, group_id):
     alias = request.POST['alias']
@@ -64,6 +71,7 @@ def add_text_category(request, group_id):
     group.text_categories.add(category)
     return {'id': category.id}
 
+@login_required
 @json_response    
 def update_text_category(request, id):
     alias = request.POST['alias']
@@ -74,18 +82,21 @@ def update_text_category(request, id):
     category.alias = alias
     category.save()
     return {}
-    
+
+@login_required    
 @json_response
 def remove_text_category(request, id):
     TextCategory.objects.get(pk=id).delete()
     return {}
 
+@login_required
 @json_response
 def associate_text_category_with_post(request, post_id, category_id):
     association = PostTextCategoryAssignment(post_id=int(post_id), category_id=int(category_id), assigned_by_human=True)
     association.save()
     return {}
 
+@login_required
 @json_response
 def deassociate_text_category_with_post(request, post_id, category_id):
     association = PostTextCategoryAssignment.objects.filter(post=int(post_id), category=int(category_id))

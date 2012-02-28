@@ -9,7 +9,6 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'crossdomain.xml', 'main_spy.views.crossdomainXML'),
     url(r'credentials/update/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/(?P<sid>[A-Za-z0-9_]+)/(?P<secret>[A-Za-z0-9_]+)/$', 'main_spy.views.receive_vk_credentials'),
-    url(r'groups/$', 'main_spy.views.groups_main'),
     
     url(r'group(?P<group_id>\d+)/add/$', 'main_spy.crud_views.add_group'),
     url(r'group(?P<group_id>\d+)/delete/$', 'main_spy.crud_views.delete_group'),   
@@ -31,5 +30,10 @@ urlpatterns = patterns('',
     url(r'text_category(?P<category_id>\d+)/assoc/(?P<post_id>\d+)/$', 'main_spy.crud_views.associate_text_category_with_post'),
     url(r'text_category(?P<category_id>\d+)/deassoc/(?P<post_id>\d+)/$', 'main_spy.crud_views.deassociate_text_category_with_post'),
     
-    url(r'^admin/', include(admin.site.urls))
+    url(r'^accounts/login/$', 'django.contrib.auth.views.login', {'template_name': 'login.html'}),
+    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login', {'login_url': '/'}),
+    
+    url(r'^admin/', include(admin.site.urls)),
+    
+    url(r'$', 'main_spy.views.groups_main'),
 )

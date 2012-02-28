@@ -10,6 +10,7 @@ from group_spy import settings
 from group_spy.crawler.vk import VKCrawler
 from group_spy.main_spy.models import Group, ScanStats, GroupObservation, Post
 from django.db.models import Avg
+from django.contrib.auth.decorators import login_required
 import group_spy.settings
 import time
 from datetime import datetime, timedelta  
@@ -49,6 +50,7 @@ def receive_vk_credentials(request, api_id, secret, sid, viewer_id):
     else:
         return {'errors': ["Credentials test has failed"]}
 
+@login_required
 def groups_main(request):
     groups = Group.objects.all ()
     
@@ -78,6 +80,6 @@ def groups_main(request):
    
     valid_credentials_count = len(get_credentials())
     return render_to_response ('groups.html', {'credentials_ok': valid_credentials_count >= credentials_needed, 
-            'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups, 
+            'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups,  'username': request.user.username,
             'credentials_count': valid_credentials_count, 'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
  

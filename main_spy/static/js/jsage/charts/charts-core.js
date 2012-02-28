@@ -166,7 +166,10 @@ jsage.charts.DataSeries = new jsage.Class('DataSeries', [jsage.EventDispatcher],
 	on_data_fetched: function(data, token) {
 		if (token == this.ajax_token) {
 			this.loading_with_last_token--
-			this.receive_update(data[this.data_key].series)
+			if (this.data_key instanceof Function)
+				this.receive_update(this.data_key(data))
+			else
+				this.receive_update(data[this.data_key].series)
 			this.dispatch_event(jsage.charts.events.series_update, this)
 		}
 	}

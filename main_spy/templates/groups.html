@@ -56,26 +56,6 @@
 		<p>Для графиков со стратификацией по времени значение соц. показателей суммируется для всех постов с датой публикации, попадающей в данную страту (например, с 10 до 11 часов). Показатели считаются для всех постов,
 		опубликованных не позднее одного месяца назад</p>
 	</div>
-	<div id="group-comparison">
-		<div><span class="small-header" id="gc-alias-1"></span><span style="margin-left:10px; margin-right:10px;"> vs </span><span class="small-header" id="gc-alias-2"></span></div>
-		<div>
-			<table>
-				<tr>
-					<td><div id="gc-dynamics-chart-container"></div></td>
-					<td><div id="gc-dynamics-chart-filter"></div></td>
-				</tr>
-			</table>
-		</div>
-		<div style="margin-top:25px; margin-bottom:10px;" class="small-header">Распределение по возрастам: </div>
-		<div id="gc-demogeo-container">
-			<table style="width:100%">
-				<tr>
-					<td style="width:50%"><div id="gc-demogeo-chart"></div></td>
-					<td style="width:50%"><div id="gc-demogeo-table"></div></td>
-				</tr>
-			</table>
-		</div>
-	</div>
 	<div id="posts-helper">
 		<h2>Редактирование и удаление категорий</h2>
 		<p>Двойной клик по тэгу вводит его в режим редактирования, кнопка ОК сохраняет изменения, крест удаляет тэг</p>
@@ -99,6 +79,7 @@
 		<div class="header second-column-header" id="stats-header">
 			<div id="screen-stat-header">Общая статистика<span id='methodology-help' class='helper-span'>[?]</span></div>
 			<div id="screen-post-header" style="display:none">Посты группы<span id='posts-help' class='helper-span'>[?]</span></div>
+			<div id="screen-group-comparison-header" style="display:none">Сравнение групп</div>
 			<div id="screen-query-header" style="display:none">Сложные запросы</div>
 		</div>
 		<div class="group_asking_to_click second-column-header">Выберите группу из списка слева</div>
@@ -152,6 +133,26 @@
 				<div id="posts-list">
 				</div>
 			</div>
+			<div id="central-group-comparison">
+				<div><span class="small-header" style="color:red" id="gc-alias-1"></span><span style="margin-left:10px; margin-right:10px;"> vs </span><span style="color:blue" class="small-header" id="gc-alias-2"></span></div>
+				<div>
+					<table>
+						<tr>
+							<td><div id="gc-dynamics-chart-container"></div></td>
+							<td><div id="gc-dynamics-chart-filter"></div></td>
+						</tr>
+					</table>
+				</div>
+				<div style="margin-top:25px; margin-bottom:10px;" class="small-header">Распределение по возрастам: </div>
+				<div id="gc-demogeo-container">
+					<table style="width:100%">
+						<tr>
+							<td style="width:0%"><div id="gc-demogeo-chart"></div></td>
+							<td style="width:100%"><div id="gc-demogeo-table"></div></td>
+						</tr>
+					</table>
+				</div>
+			</div>
 		</div>
 	</div>
 	<div class="column" id="system-column">
@@ -169,12 +170,16 @@
 	</div>
 	<div id="control_div">
 		<div class="group" id="addgroup_div">
-			<span class="emphasize pointer" onclick="addGroup ()">Добавить</span> группу <input id="added_group_id" type="text" style="width: 70px; margin-left:10px;"> 
+			<span class="emphasize pointer" onclick="addGroup()">Добавить</span> группу <input id="added_group_id" type="text" style="width: 70px; margin-left:10px;"> 
 		</div>
 		<div id="screen-select-div" class="group">
-			<span>Вывести:</span><select style="margin-left:15px;" id="screen-select"><option value="screen-stat">статистику</option><option value="screen-post">посты</option><option value="screen-query">сложные запросы</option></select>
+			<span>Вывести:</span><select style="margin-left:15px;" id="screen-select"><option value="screen-stat">статистику</option><option value="screen-post">посты</option></select>
 		</div>
-		<div id="operations-counter" class="group">
+		<div id="auth-div" class="group">
+			<div style="display:inline">
+				<span class="emphasize pointer" onclick="window.location = '../accounts/logout/'">Выйти</span> из аккаунта <span class="emphasize pointer" id="auth-logout">{{ username }}</span>
+			</div>
+			<div id="operations-counter" class="group"></div>
 		</div>
 	</div>
 </div>

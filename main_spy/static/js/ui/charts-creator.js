@@ -78,6 +78,7 @@ window.create_line_chart = function(series, params) {
 			showLastLabel: true,
 			maxPadding: 0.0,
 			ordinal: false,
+            gridLineWidth: 1,
 			events: {
 				setExtremes: function(event) { on_range_select (Math.round (event.min / 1000), Math.round (event.max / 1000)) }
 			}

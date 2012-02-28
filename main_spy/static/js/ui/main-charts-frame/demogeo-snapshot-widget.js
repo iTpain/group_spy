@@ -128,12 +128,14 @@ function draw_demogeo_charts(data_index) {
 	geo_chart_desc.data = geo_chart_desc.initial_data[data_index]
 	if (geo_chart_desc.chart)
 		geo_chart_desc.chart.destroy()
+	//console.log(geo_chart_desc.initial_data[data_index].toString())
 	create_pie_chart(geo_chart_desc)
 	
 	for (var i = 0, l = demo_descriptions.length; i < l; i++) {
 		var series = create_demo_stratas(demo_descriptions[i].initial_data[data_index], demos[i][0], demos[i][1])
 		demo_descriptions[i].data = series
 		absolute_to_percents_in_array(series)
+		//console.log(series.toString())
 		if (demo_descriptions[i].chart)
 			demo_descriptions[i].chart.destroy()
 		create_pie_chart(demo_descriptions[i])

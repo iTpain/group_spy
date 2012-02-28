@@ -4,20 +4,24 @@ from group_spy.main_spy.group_scan import compute_group_activity
 from group_spy.main_spy.views_utils import json_response
 from datetime import datetime, timedelta
 from django.db.models import F
+from django.contrib.auth.decorators import login_required
 import time, json
 
 #
 #    Extract series snapshots for likes, posts count, comments, active users, etc.
 #
 
+@login_required
 @json_response
 def get_series_group_wide(request, group_id, stat_id, time_start, time_end):
     return get_series_group_wide_inner(group_id, stat_id, time_start, time_end)
 
+@login_required
 @json_response
 def get_series_group_wide_all_social_stats(request, group_id, time_start, time_end):
     return get_stats_set_group_wide(group_id, ['active_posts_count', 'active_posts_likes', 'active_posts_reposts', 'active_posts_comments'], time_start, time_end)
 
+@login_required
 @json_response
 def get_series_group_wide_all_user_stats(request, group_id, time_start, time_end):
     return get_stats_set_group_wide(group_id, ['total_users', 'banned_users', 'faceless_users', 'users_1', 'users_3'], time_start, time_end)  
@@ -128,6 +132,7 @@ def get_abs_seconds_diff(d1, d2):
 #    Get group stats snapshot for current moment and some moments in past
 #
 
+@login_required
 @json_response
 def get_group_current_stats(request, group_id):
     stats = ["total_users", "faceless_users", "banned_users", "active_posts_count", "active_posts_likes", "active_posts_comments", "active_posts_reposts", "users_1", "users_3"]
@@ -170,11 +175,13 @@ def get_approximation_for_stat(objects, date, max_absolute_error):
 #
 #    Get final values dynamics for posts' comments, likes, reposts
 #
-  
+
+@login_required  
 @json_response
 def get_series_for_posts(request, group_id, stat_id, content_types, time_start, time_end):
     return get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end)
 
+@login_required
 @json_response
 def get_all_stats_series_for_posts(request, group_id, content_types, time_start, time_end):
     stats = {'likes': [], 'comments': [], 'reposts': []}
@@ -211,14 +218,17 @@ def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, tim
 #    Get posts' cumulative social data by stratas
 #
 
+@login_required
 @json_response
 def get_social_activity_for_intraday_stratas(request, group_id, time_start, time_end):
     return get_social_activity_stratified_template_func(group_id, time_start, time_end, intraday_stratify)
-    
+
+@login_required    
 @json_response
 def get_social_activity_for_intraweek_stratas(request, group_id, time_start, time_end):
     return get_social_activity_stratified_template_func(group_id, time_start, time_end, intraweek_stratify)
 
+@login_required
 @json_response
 def get_social_activity_for_content_stratas(request, group_id, time_start, time_end):
     return get_social_activity_stratified_template_func(group_id, time_start, time_end, content_type_stratify)
@@ -275,6 +285,7 @@ def content_type_stratify(posts):
 #    Get latest demogeo observation
 #    
 
+@login_required
 @json_response
 def get_demogeo_snapshot(request, group_id, time):
     time = datetime.fromtimestamp(int(time))

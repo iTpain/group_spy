@@ -91,7 +91,7 @@ var DemogeoLoader = new jsage.Class('DemogeoLoader', [jsage.EventDispatcher], {
 var RadioChoiceWidget = new jsage.Class('RadioChoiceWidget', [jsage.EventDispatcher], {
 	
 	init: function(div, options, name) {
-		var form = $("<form></form>")[0]
+		var form = $("<form style='margin-top:-80px; margin-left:15px; font-size:12px; width:150px;'></form>")[0]
 		div.appendChild(form)
 		var elements = []
 		for (var i = 0, l = options.length; i < l; i++) {
@@ -127,9 +127,11 @@ var DynamicsChartWidget = new jsage.Class('DynamicsChartWidget', [], {
 			{label: 'Снимок - лайки', data: 6},
 			{label: 'Снимок - комментарии', data: 7},
 			{label: 'Снимок - репосты', data: 8},
-			{label: 'Финал - лайки', data: 9},
-			{label: 'Финал - комментарии', data: 10},
-			{label: 'Финал - репосты', data: 11}
+			{label: 'Снимок - соц. действия', data: 9},
+			{label: 'Финал - лайки', data: 10},
+			{label: 'Финал - комментарии', data: 11},
+			{label: 'Финал - репосты', data: 12},
+			{label: 'Финал - соц. действия', data: 13}
 		], 'group-comparison-dynamics-type')
 		radio_choice.add_listener('change', this, this.on_filter_changed)
 	},
@@ -149,6 +151,24 @@ var DynamicsChartWidget = new jsage.Class('DynamicsChartWidget', [], {
 	},
 	
 	build: function() {
+		function create_aggregator(keys) {
+			return function(data) {
+				var arrays = []
+				for (var i = 0, l = keys.length; i < l; i++)
+					arrays.push(data[keys[i]].series)
+				var result = []
+				var data_len = arrays[0].length
+				var len = arrays.length
+				for (i = 0; i < data_len; i++) {
+					var sum = 0
+					for (var j = 0; j < len; j++)
+						sum += arrays[j][i][1]
+					result.push([arrays[0][i][0], sum])
+				}
+				return result
+			}
+		}
+		
 		var time_filter = jsage.charts.DefaultTimeFilter.create(this.year_before, this.time_now)
 		var filters = [time_filter]
 		var finals_filters = [time_filter, { invalidating: function() {return true}, make_url_part: function() { return 'all'} }]
@@ -167,19 +187,21 @@ var DynamicsChartWidget = new jsage.Class('DynamicsChartWidget', [], {
 				{ color: color, inilabel: "Снимок - лайки", id: "active_posts_likes", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_snapshots/', 'active_posts_likes', filters) },
 				{ color: color, inilabel: "Снимок - комментарии", id: "active_posts_comments", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_snapshots/', 'active_posts_comments', filters) },
 				{ color: color, inilabel: "Снимок - репосты", id: "active_posts_reposts", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_snapshots/', 'active_posts_reposts', filters) },
+				{ color: color, inilabel: "Снимок - соц. действия", id: "active_posts_social_actions", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_snapshots/', create_aggregator(["active_posts_comments", "active_posts_likes", "active_posts_reposts"]), filters) },
 				{ color: color, inilabel: "Финал - лайки", id: "likes", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_finals/', 'likes', finals_filters) },
 				{ color: color, inilabel: "Финал - комментарии", id: "comments", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_finals/', 'comments', finals_filters) },
-				{ color: color, inilabel: "Финал - репосты", id: "reposts", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_finals/', 'reposts', finals_filters) }
+				{ color: color, inilabel: "Финал - репосты", id: "reposts", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_finals/', 'reposts', finals_filters) },
+				{ color: color, inilabel: "Финал - соц. действия", id: "social_actions", source: this.create_series('/group<GROUP_'+i+'_ID>/all_social_stats_finals/', create_aggregator(["comments", "likes", "reposts"]), finals_filters) }
 			])
 		}
 		this.chart = jsage.charts.DataChartPresentation.create(
 			series,
-			[groupspy.NormalizeDataTransformer.create(false), groupspy.SlidingAverageDataTransformer.create(true, 0.015)], 
+			[groupspy.NormalizeDataTransformer.create(true), groupspy.SlidingAverageDataTransformer.create(true, 0.015)], 
 			{ 
 				title: '', 
 				title_floating: true,
 				container: "gc-dynamics-chart-container",
-				width: 800,
+				width: 700,
 				height: 500,
 				legend_y: -420,
 				legend_disabled: true,
@@ -227,11 +249,7 @@ var ComparisonWidget = new jsage.Class('ComparisonWidget', [], {
 	},
 	
 	open: function(gid1, gid2) {
-		$.openDOMWindow({
-			windowSourceID: this.window_id,
-			width: 1024,
-			height: 600
-		})
+		open_central_frame("screen-group-comparison")
 		$("#gc-alias-1")[0].innerHTML = find_group_by_id(gid1).alias
 		$("#gc-alias-2")[0].innerHTML = find_group_by_id(gid2).alias
 		for (var i = 0, l = this.widgets.length; i < l; i++)
@@ -245,7 +263,7 @@ groupspy.GroupComparisonBase = new jsage.Class('GroupComparisonBase', [jsage.Glo
 	init: function() {
 		this.subscribe(groupspy.messages.group_added, this.on_group_added)
 		this.discover_group_divs()
-		this.comparison_widget = ComparisonWidget.create('#group-comparison')
+		this.comparison_widget = ComparisonWidget.create('#central-group-comparison')
 	},
 	
 	discover_group_divs: function() {

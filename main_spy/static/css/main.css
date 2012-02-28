@@ -189,6 +189,12 @@ span.helper-span {
 	height:50px;
 }
 
+#auth-div {
+	position: absolute;
+	right: 10px;
+	top:-5px;
+}
+
 #control_div div {
 	margin-top: 6px;
 	color:white;
@@ -204,8 +210,8 @@ span.helper-span {
 }
 
 #operations-counter {
-	position: absolute;
-	right: 10px;
+	margin-left:20px;
+	display:inline;
 }
 
 #graphFrame {
@@ -368,7 +374,7 @@ div.post-text {
 	vertical-align:-2px;
 }
 
-#group-comparison {
-	width:1024px;
+#central-group-comparison {
+	width:800px;
 	display:none;
 }

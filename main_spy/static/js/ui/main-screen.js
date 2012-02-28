@@ -10,6 +10,9 @@ var screens_info = {
 	'screen-post': {
 		address: 'posts'
 	},
+	'screen-group-comparison': {
+		address: 'group-comparison'
+	},
 	'screen-query': {
 		address: 'queries'
 	}		
@@ -19,9 +22,13 @@ var group_shown = null
 var current_screen_shown = null
 
 $("#screen-select").bind("change", function (e) {
-	current_screen = e.target.value
-	redrawFrame()
+	open_central_frame(e.target.value)
 })
+
+window.open_central_frame = function(id) {
+	current_screen = id
+	redrawFrame()
+}
 
 window.find_group_by_id = function(gid) {
 	for (var i = 0, l = groups_info.length; i < l; i++) {
@@ -32,9 +39,10 @@ window.find_group_by_id = function(gid) {
 }
 	
 function redrawFrame() {
-	if (group_shown != null) {
+	if (group_shown != null || current_screen == "screen-group-comparison") {
 		if (current_screen_shown != null)
 			current_screen_shown.style.display = 'none'
+
 		current_screen_shown = document.getElementById('central-' + screens_info[current_screen].address)
 		current_screen_shown.style.display = 'block'
 		jsage.global_bus.trigger(groupspy.messages[screens_info[current_screen].address + '_frame_activate'], group_shown)
@@ -42,8 +50,10 @@ function redrawFrame() {
 		$("div.group_asking_to_click")[0].style.display = "none"
 		if (curSelected != null) 
 			$(curSelected)[0].style.color = ""
-		$("#group_alias_" + group_shown)[0].style.color = "#ff6600"
-		curSelected = $("#group_alias_" + group_shown)[0]	
+		if (group_shown != null) {
+			$("#group_alias_" + group_shown)[0].style.color = "#ff6600"
+			curSelected = $("#group_alias_" + group_shown)[0]	
+		}
 		
 		for (var e in screens_info) {
 			var header = $('#' + e + '-header')[0]
@@ -96,6 +106,8 @@ window.update_group_info = function() {
 var curSelected = null
 window.showGroup = function (gid, obj) {
 	group_shown = gid
+	if (current_screen == "screen-group-comparison")
+		current_screen = "screen-stat"
 	redrawFrame()
 }
 
