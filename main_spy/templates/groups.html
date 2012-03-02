@@ -3,6 +3,7 @@
 <head>
 	<title>Group spy</title>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css"/>
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery-ui-1.8.18.custom.css"/>
 	<script>
 		var groups_info = [0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}]
 		groups_info.shift()
@@ -10,6 +11,7 @@
 	<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery-ui.js"></script>
+	<script src="{{ STATIC_URL }}js/localization.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.DOMWindow.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/highcharts.js" type="text/javascript"></script>
 	<script src="{{ STATIC_URL }}js/js_external/highstock.js" type="text/javascript"></script>
@@ -87,6 +89,19 @@
 			<div id="central-group" style='display:none;'>
 				<div id="group_stats_snapshot_header">Значения основных показателей сейчас</div>
 				<div id="group_stats_snapshot"></div>
+				<div id="group_cumulative_posts">
+					<div class="blue-subheader pointer gcp-toggle" onclick="$('#group_cumulative_posts_widget').toggle(); $('.gcp-toggle').toggle()">Хочу еще больше информации!</div>
+					<div class="blue-subheader pointer gcp-toggle" onclick="$('#group_cumulative_posts_widget').toggle(); $('.gcp-toggle').toggle()" style="display:none">Хватит, насмотрелся!</div>
+					<div id="group_cumulative_posts_widget" style="display:none">
+						<div style="display:inline-block">Начало периода: <input type="text" id="gcp-time-start" class="gcp-datepicker" /></div>
+						<div style="display:inline-block">Конец периода: <input type="text" id="gcp-time-end" class="gcp-datepicker" /></div>
+						<div style="margin-top:10px;">Всего постов: <span id="gcp-posts-count" class="gcp-stat"></span></div>
+						<div>Всего соц. действий: <span id="gcp-sa-count" class="gcp-stat"></span></div>
+						<div>Соц. действий на пост: <span id="gcp-per-post-capita" class="gcp-stat"></span></div>
+						<div>Соц. действий в день: <span id="gcp-per-day-capita" class="gcp-stat"></span></div>
+						<div>Соц. действий на участника: <span id="gcp-per-user-capita" class="gcp-stat"></span></div>
+					</div>
+				</div>
 				<div id="group_users_chart" class="chart_container" style="clear: both"></div>
 				<div class="chart_container"><div id="group_activity_chart"></div></div>
 				<div class="chart_container" style="height:540px"><div id="group_social_activity_dynamics"></div></div>

@@ -3,7 +3,7 @@ from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from group_spy.main_spy.views_utils import json_response
 from datetime import datetime, timedelta
-from django.db.models import F
+from django.db.models import F, Sum
 from django.contrib.auth.decorators import login_required
 import time, json
 
@@ -301,3 +301,24 @@ def get_demogeo(group_id, time, whole_group):
             return json.loads(value)
         except DemogeoGroupObservation.DoesNotExist:
             return None
+        
+        
+#
+#    Cumulative statistics over period for posts count etc
+#
+
+@login_required
+@json_response
+def get_group_cumulative_post_stats(request, group_id, time_start, time_end):  
+    if time_end == '0':
+        time_end = datetime.now()
+    else:
+        time_end = datetime.fromtimestamp(int(time_end))
+    time_start = datetime.fromtimestamp(int(time_start))
+    social_actions = LatestPostObservation.objects.filter(post__group=group_id, post__date__lte=time_end, post__last_comment_date__gte=time_start - timedelta(days=7))
+    social_actions_count = social_actions.aggregate(total_actions=Sum('value'))
+    posts = Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start - timedelta(days=7))
+    group_users_count = GroupObservation.objects.filter(group=group_id, statistics="total_users").latest("date").value
+    days_count = (posts.latest("date").date - posts.order_by("date").latest("date").date).days
+    return {'posts_count': posts.count(), 'social_actions_count': social_actions_count['total_actions'], 'group_users_count': group_users_count, 'days_count': days_count }
+    

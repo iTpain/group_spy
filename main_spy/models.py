@@ -80,8 +80,9 @@ class DemogeoGroupObservation(models.Model):
 class UserSocialAction(models.Model):
     post = models.ForeignKey(Post)
     user = models.ForeignKey(User)
-    likes = models.IntegerField()
-    comments = models.IntegerField()
+    type = models.CharField(max_length=32)
+    content_id = models.CharField(max_length=128)
+    date = models.DateTimeField()
     
 class PostTextCategoryAssignment (models.Model):
     date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)

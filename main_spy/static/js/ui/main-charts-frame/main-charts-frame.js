@@ -1,4 +1,4 @@
-new Module('ui/main-charts-frame/main-charts-frame.js', ['jsage/eventbus.js', 'ui/main-charts-frame/main-charts-widget.js', 
+new Module('ui/main-charts-frame/main-charts-frame.js', ['jsage/eventbus.js', 'ui/main-charts-frame/main-charts-widget.js', 'ui/main-charts-frame/snapshot-lower-widget.js',
 														 'ui/main-charts-frame/stats-snapshot-widget.js', 'ui/main-charts-frame/demogeo-snapshot-widget.js'], function () {
 $(document).ready(function() {
 
@@ -25,7 +25,7 @@ groupspy.BaseChartsFrame = new jsage.Class('BaseChartsFrame', [jsage.GlobalMessa
 	
 })
 
-var frame = groupspy.BaseChartsFrame.create([groupspy.StatsSnapshotWidget, groupspy.MainChartsWidget, groupspy.DemogeoSnapshotWidget])
+var frame = groupspy.BaseChartsFrame.create([groupspy.StatsSnapshotWidget, groupspy.MainChartsWidget, groupspy.DemogeoSnapshotWidget, groupspy.SnapshotLowerWidget])
 	
 })
 })
