@@ -6,6 +6,7 @@ var messages_list = [
 	'active_ajax_count_changed',
 	'group_frame_activate',
 	'posts_frame_activate',
+	'usertop_frame_activate',
 	'group_added',
 	'group_removed'
 ]

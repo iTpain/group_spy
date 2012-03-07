@@ -259,6 +259,39 @@ jsage.charts.DataChartPresentation = new jsage.Class('DataChartPresentation', []
 			}
 		}
 		this.fetch_chart_data()
+	},
+	
+	get_excel_xml: function() {
+		var xls = []
+		xls.push('<?xml version="1.0"?><ss:Workbook xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><ss:Worksheet ss:Name="Sheet1"><ss:Table>')
+		var data = []
+		for (var i = 0, l = this.series_description.length; i < l; i++) {
+			xls.push('<ss:Column ss:Width="80"/>')
+			data.push(this.series_description[i].source.get_data_copy().reverse())
+		}
+		xls.push('<ss:Row>')
+		xls.push('<ss:Cell><ss:Data ss:Type="String">date</ss:Data></ss:Cell>')
+		for (i = 0; i < l; i++) {
+			xls.push('<ss:Cell><ss:Data ss:Type="String">' + this.series_description[i].id + '</ss:Data></ss:Cell>')
+		}
+		xls.push('</ss:Row>')
+		for (i = 0, l = data[0].length; i < l; i++) {
+			xls.push('<ss:Row>')
+			var date = new Date(data[0][i][0])
+			var day = date.getDate()
+			var month = date.getMonth() + 1
+			var year = date.getFullYear()
+			var hours = date.getHours()
+			var minutes = date.getMinutes()
+			var date_str = day + "." + month + "." + year + " " + hours + ":" + minutes
+			xls.push('<ss:Cell><ss:Data ss:Type="String">' + date_str + '</ss:Data></ss:Cell>')
+			for (var j = 0, lj = this.series_description.length; j < lj; j++) {
+				xls.push('<ss:Cell><ss:Data ss:Type="String">' + data[j][i][1] + '</ss:Data></ss:Cell>')
+			}
+			xls.push('</ss:Row>')
+		}
+		xls.push('</ss:Table></ss:Worksheet></ss:Workbook>')
+		return xls.join("")
 	}
 	
 })

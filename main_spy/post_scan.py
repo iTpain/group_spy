@@ -80,7 +80,7 @@ class PostsScanner(object):
                 post = (po for po in active_posts if str(po.pid) == str(p['id'])).next()
                 post_comments = [c for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id))]
                 self.update_post(crawler, post, p, post_comments)
-                #self.update_user_activity_for_post(crawler, post, post_comments)
+                self.update_user_activity_for_post(crawler, post, post_comments)
             except StopIteration:
                 continue
         # cleansing
@@ -89,31 +89,44 @@ class PostsScanner(object):
                 print "Deleting probably spam post " + p.pid
                 p.delete()
     
-    def update_user_activity_param_for_post(self, crawler, post, source, param_id):
-        users_dict = list_to_quantity_dict(source)
-        vk_to_db = {}
-        in_db_users_dict = {u.vkid: u.id for u in VKUser.objects.filter(vkid__in=users_dict.keys())}
-        for uid in users_dict.keys():
-            if not uid in in_db_users_dict:
-                user = VKUser(vkid=uid, last_scanned=datetime(2000, 1, 1))
-                user.save()
-                vk_to_db[uid] = user.id
-            else:
-                vk_to_db[uid] = in_db_users_dict[uid]       
-        social_actions = VKUserSocialAction.objects.filter(post=post, user__in=users_dict.keys())
-        social_actions_dict = {sa.user_id: sa for sa in social_actions}
-        for vk_id, db_id in vk_to_db.iteritems():
-            if not db_id in social_actions_dict:
-                kwargs = {'post': post, 'user_id': db_id, param_id: users_dict[vk_id]}
-                action = VKUserSocialAction(**kwargs)
-                action.save()
-            if getattr(social_actions_dict[db_id], param_id) != users_dict[vk_id]:
-                setattr(social_actions_dict[db_id], param_id, users_dict[vk_id])
-                social_actions_dict[db_id].save()
-                
+    def update_comments_for_post(self, crawler, post, source):
+        if len(source) == 0:
+            return       
+        ids_table = self.add_non_existing_users_to_db([c['uid'] for c in source])
+        all_saved_actions = list(UserSocialAction.objects.filter(post=post, user__in=ids_table.values()))
+        for c in source:
+            try:
+                (action for action in all_saved_actions if str(c['cid']) == action.content_id).next()
+            except StopIteration:
+                print "adding comment " + str(c["cid"])
+                UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c['uid']], content_id=c['cid'], type="comment", date=datetime.fromtimestamp(c['date']))
+        #social_actions = 
+    
+    def update_likes_for_post(self, crawler, post, source):
+        if len(source) == 0:
+            return
+        ids_table = self.add_non_existing_users_to_db([c for c in source])
+        all_saved_actions = list(UserSocialAction.objects.filter(post=post, user__in=ids_table.values(), type="like"))
+        for c in source:
+            try:
+                (action for action in all_saved_actions if ids_table[c] == action.user_id).next()
+            except StopIteration:
+                print "adding like " + str(c)
+                UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c], content_id="", type="like", date=datetime.now())        
+    
+    def add_non_existing_users_to_db(self, ids_list):
+        users_set = [unique for unique in {id for id in ids_list}]
+        in_db_users = {u.snid: u.id for u in User.objects.filter(snid__in=users_set)}
+        for u in users_set:
+            if not u in in_db_users:
+                print "adding user " + str(u)
+                new_user = User.objects.create(snid=u, last_scanned=datetime.now() - timedelta(days=365))
+                in_db_users[u] = new_user.id          
+        return in_db_users
+         
     def update_user_activity_for_post(self, crawler, post, post_comments):
-        self.update_user_activity_param_for_post(crawler, post, post_comments, "comments")
-        self.update_user_activity_param_for_post(crawler, post, [like for like in crawler.get_likes_for_object('post', "-" + str(post.group_id), post.pid, False)], "likes")
+        self.update_comments_for_post(crawler, post, post_comments)
+        self.update_likes_for_post(crawler, post, [like for like in crawler.get_likes_for_object('post', "-" + str(post.group_id), post.pid, False)])
             
     def update_post(self, crawler, post, post_fresh_vk_data, comments):
         now = iso_date_from_ts(time.time())

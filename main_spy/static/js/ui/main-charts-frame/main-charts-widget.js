@@ -29,7 +29,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 	},
 	
 	create_user_stats_chart: function() {
-		var filters = [jsage.charts.DefaultTimeFilter.create(this.month_before, this.time_now)]
+		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now)]
 		return jsage.charts.DataChartPresentation.create([
 				{ color: '#0000ff', label: "Всего участников", id: "total_users", source: this.create_series('/group<GROUP_ID>/all_user_stats_snapshots/', 'total_users', filters)},
 				{ color: '#ff6600', label: "Без аватара", id: "faceless_users", source: this.create_series('/group<GROUP_ID>/all_user_stats_snapshots/', 'faceless_users', filters) },
@@ -47,7 +47,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 				title_margin: 50,
 				legend_y: -420,
 				range_selected: 0,
-				axis_x_min: this.month_before * 1000,
+				axis_x_min: this.three_months_before * 1000,
 				axis_x_max: this.time_now * 1000
 			},
 			create_line_chart
@@ -55,7 +55,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 	},
 	
 	create_social_stats_snapshots_chart: function() {
-		var filters = [jsage.charts.DefaultTimeFilter.create(this.month_before, this.time_now)]
+		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now)]
 		return jsage.charts.DataChartPresentation.create([
 				{ color: '#00ff00', label: "Всего активных постов", id: "active_posts_count", source: this.create_series('/group<GROUP_ID>/all_social_stats_snapshots/', 'active_posts_count', filters) },
 				{ color: '#ff0000', label: "Всего лайков для а.п.", id: "active_posts_likes", source: this.create_series('/group<GROUP_ID>/all_social_stats_snapshots/', 'active_posts_likes', filters) },
@@ -72,7 +72,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 				title_margin: 50,
 				legend_y: -420,
 				range_selected: 0,
-				axis_x_min: this.month_before * 1000,
+				axis_x_min: this.three_months_before * 1000,
 				axis_x_max: this.time_now * 1000		
 			},
 			create_line_chart
@@ -157,8 +157,17 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 	accept_charts: function(charts) {
 		if (!(charts instanceof Array))
 			charts = [charts]
-		for (var i = 0, l = charts.length; i < l; i++)
+		for (var i = 0, l = charts.length; i < l; i++) {
 			this.charts.push(charts[i])
+			var loader = $("<div style='margin-left:10px;' class='pointer emphasize'>Загрузить XML</div>")[0]
+			$("#" + charts[i].chart_options.container)[0].appendChild(loader)
+			$(loader).bind("click", (function(chart) {
+				return function(e) {
+					var xlsxml = chart.get_excel_xml()
+					window.open('data:text/xml,' + xlsxml)
+				}
+			})(charts[i]))
+		}
 	},
 	
 	create_charts: function() {

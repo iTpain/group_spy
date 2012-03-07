@@ -22,6 +22,7 @@ urlpatterns = patterns('',
     url(r'group(?P<group_id>\d+)/all_user_stats_snapshots/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_series_group_wide_all_user_stats'),
     url(r'group(?P<group_id>\d+)/all_social_stats_finals/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/(?P<content_types>[a-z_,]*)/$', 'main_spy.stat_views.get_all_stats_series_for_posts'),
     url(r'group(?P<group_id>\d+)/latest_demogeo_snapshot/(?P<time>[0-9]+)/$', 'main_spy.stat_views.get_demogeo_snapshot'),
+    url(r'group(?P<group_id>\d+)/users_top/$', 'main_spy.stat_views.get_users_top'),
     
     url(r'group(?P<group_id>\d+)/posts/(?P<start>[0-9]+)/(?P<count>[0-9]+)/(?P<only_by_group>[a-z]+)/$', 'main_spy.crud_views.get_posts'),
     url(r'group(?P<group_id>\d+)/category/get_all/$', 'main_spy.crud_views.get_text_categories'),

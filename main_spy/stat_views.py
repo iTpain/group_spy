@@ -1,9 +1,9 @@
-from group_spy.main_spy.models import GroupObservation, Group, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation
+from group_spy.main_spy.models import GroupObservation, Group, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation, User, UserSocialAction
 from group_spy.utils.misc import get_vk_crawler, get_credentials
 from group_spy.main_spy.group_scan import compute_group_activity
 from group_spy.main_spy.views_utils import json_response
 from datetime import datetime, timedelta
-from django.db.models import F, Sum
+from django.db.models import F, Sum, Count
 from django.contrib.auth.decorators import login_required
 import time, json
 
@@ -321,4 +321,27 @@ def get_group_cumulative_post_stats(request, group_id, time_start, time_end):
     group_users_count = GroupObservation.objects.filter(group=group_id, statistics="total_users").latest("date").value
     days_count = (posts.latest("date").date - posts.order_by("date").latest("date").date).days
     return {'posts_count': posts.count(), 'social_actions_count': social_actions_count['total_actions'], 'group_users_count': group_users_count, 'days_count': days_count }
+
+
+#
+#    Group users activity rating
+#
+
+@login_required
+@json_response
+def get_users_top(request, group_id):
+    comments = UserSocialAction.objects.filter(type="comment", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(comments=Count('user'))
+    likes = UserSocialAction.objects.filter(type="like", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(likes=Count('user'))
+    users = {}
+    for c in comments:
+        c['likes'] = 0
+        if not c['user'] in users:
+            users[c['user']] = c
+    for l in likes:
+        l['comments'] = 0
+        if not l['user'] in users:
+            users[l['user']] = l
+        else:
+            users[l['user']]['likes'] = l['likes']
+    return users
     
