@@ -13,8 +13,8 @@ var screens_info = {
 	'screen-group-comparison': {
 		address: 'group-comparison'
 	},
-	'screen-query': {
-		address: 'queries'
+	'screen-usertop': {
+		address: 'usertop'
 	}		
 }
 var current_screen = 'screen-stat'

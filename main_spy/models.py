@@ -22,6 +22,9 @@ class User(models.Model):
     city_alias = models.CharField(max_length=64, null=True)
     last_scanned = models.DateTimeField(db_index=True, null=True)
     social_network = models.ForeignKey(SocialNetwork, null=True)
+    
+    def __str__(self):
+        return "<" + str(self.id) + " snid=" + str(self.snid) + ">"
 
 class Group(models.Model):
     gid = models.CharField(max_length=256)

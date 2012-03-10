@@ -12,7 +12,8 @@ setup_environ(settings)
 from babysitter.daemon import launch
 from group_spy.main_spy.group_scan import GroupScanner
 from group_spy.main_spy.post_scan import PostsScanner
-from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment, User
+from group_spy.main_spy.user_scan import UserScanner
+from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment, User, UserSocialAction
 from datetime import datetime
 
 """
@@ -77,6 +78,6 @@ exit()
 #        Post.objects.get(pk=p).delete()
 #exit()
 
-launch([PostsScanner, GroupScanner], [settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
+launch([UserScanner, PostsScanner, GroupScanner], [settings.USER_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
 #launch([PostsScanner], [settings.POSTS_SCAN_INTERVAL])
 #launch([GroupScanner], [settings.GROUPS_SCAN_INTERVAL])
