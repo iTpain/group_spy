@@ -124,6 +124,7 @@ var demo_descriptions = [
 	{container: 'woman_age_snapshot_chart', width: 400, height: 400, title: 'Распределение женщин по возрасту', size: 200}
 ]
 
+var loaders_added = false
 function draw_demogeo_charts(data_index) {
 	geo_chart_desc.data = geo_chart_desc.initial_data[data_index]
 	if (geo_chart_desc.chart)
@@ -139,7 +140,17 @@ function draw_demogeo_charts(data_index) {
 		if (demo_descriptions[i].chart)
 			demo_descriptions[i].chart.destroy()
 		create_pie_chart(demo_descriptions[i])
+		if (!loaders_added) {
+			var loader = $("<div style='margin-left:10px;' class='pointer emphasize'>Загрузить XML</div>")[0]
+			$("#" + demo_descriptions[i].container)[0].parentNode.appendChild(loader)
+			$(loader).bind("click", function(e) {
+					//var xlsxml = chart.get_excel_xml()
+					//$("#flash-helper-saver")[0].saveFile(xlsxml)
+					//window.open('data:text/xml,' + xlsxml)
+			})			
+		}
 	}	
+	loaders_added = true
 }
 
 var demogeoSwitcher = jsage.OptionsList.create($("#demogeo_switcher")[0], [{label: 'всем участникам', data: 0}, {label: 'активной аудитории', data: 1}])

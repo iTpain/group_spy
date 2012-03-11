@@ -316,12 +316,14 @@ def get_group_cumulative_post_stats(request, group_id, time_start, time_end):
         time_end = datetime.fromtimestamp(int(time_end))
     time_start = datetime.fromtimestamp(int(time_start))
     social_actions = LatestPostObservation.objects.filter(post__group=group_id, post__date__lte=time_end, post__last_comment_date__gte=time_start - timedelta(days=7))
-    social_actions_count = social_actions.aggregate(total_actions=Sum('value'))
+    social_actions_count = social_actions.values("statistics").annotate(total_actions=Sum('value'))
     posts = Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start - timedelta(days=7))
     group_users_count = GroupObservation.objects.filter(group=group_id, statistics="total_users").latest("date").value
     days_count = (posts.latest("date").date - posts.order_by("date").latest("date").date).days
-    return {'posts_count': posts.count(), 'social_actions_count': social_actions_count['total_actions'], 'group_users_count': group_users_count, 'days_count': days_count }
-
+    response = {'posts_count': posts.count(), 'group_users_count': group_users_count, 'days_count': days_count }
+    for stat in social_actions_count:
+        response[stat['statistics']] = stat['total_actions']
+    return response
 
 #
 #    Group users activity rating

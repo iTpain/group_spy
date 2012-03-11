@@ -50,7 +50,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 				axis_x_min: this.three_months_before * 1000,
 				axis_x_max: this.time_now * 1000
 			},
-			create_line_chart
+			create_line_chart, jsage.charts.date_transformer
 		)		
 	},
 	
@@ -75,7 +75,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 				axis_x_min: this.three_months_before * 1000,
 				axis_x_max: this.time_now * 1000		
 			},
-			create_line_chart
+			create_line_chart, jsage.charts.date_transformer
 		)		
 	},
 	
@@ -101,7 +101,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 				axis_x_min: this.year_before * 1000,
 				axis_x_max: this.time_now * 1000		
 			},
-			create_line_chart
+			create_line_chart, jsage.charts.date_transformer
 		)	
 		filters[1].set_chart(chart)
 		return chart	
@@ -164,6 +164,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 			$(loader).bind("click", (function(chart) {
 				return function(e) {
 					var xlsxml = chart.get_excel_xml()
+					//$("#flash-helper-saver")[0].saveFile(xlsxml)
 					window.open('data:text/xml,' + xlsxml)
 				}
 			})(charts[i]))
