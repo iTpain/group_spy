@@ -124,31 +124,76 @@ var demo_descriptions = [
 	{container: 'woman_age_snapshot_chart', width: 400, height: 400, title: 'Распределение женщин по возрасту', size: 200}
 ]
 
-var loaders_added = false
+groupspy.demogeoXMLLoader = new jsage.Class('demogeoXMLLoader', [], {
+	
+	init: function() {
+		this.flash_id = "flash_saver_" + (groupspy.counter++)
+		this.gui = $("<div class='emphasize' style='width:100px; height:30px; margin-left:7px;'><div style='width:100px; height:30px;' id=" + this.flash_id + "></div></div>")[0]
+		this.gui_has_parent = false
+	},
+	
+	set_parent: function(chart_desc) {
+		if (!this.gui_has_parent) {
+			var container = $("#" + chart_desc.container)[0].parentNode
+			container.appendChild(this.gui)
+			var flash_params = {
+				menu: "false",
+				scale: "noscale",
+				allowFullscreen: "true",
+				allowScriptAccess: "always",
+				bgcolor: "#FFFFFF",
+				wmode: "transparent"
+			}
+			var that = this
+			groupspy[this.flash_id] = function (chart) {
+				return that.get_excel_xml()
+			}
+			swfobject.embedSWF("static/swf/JSHelper_Saver.swf", this.flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + this.flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: this.flash_id});
+			this.gui_has_parent = true
+		}
+		this.chart_desc = chart_desc 
+	},
+	
+	get_excel_xml: function() {
+		var series = this.chart_desc.chart.series[0].data
+		var columns = ["strata", "absolute", "percentage"]
+		var data = [[], [], []]
+		for (var i = 0, l = series.length; i < l; i++) {
+			data[0][i] = series[i].name
+			data[1][i] = series[i].y
+			data[2][i] = series[i].percentage.toPrecision(4)
+		}
+		
+		return jsage.charts.get_excel_xml(columns, data)
+	},	
+	
+	get_gui: function() {
+		return this.gui
+	}
+	
+})
+
+var xml_loaders = []
+for (var i = 0; i < demo_descriptions.length + 1; i++)
+	xml_loaders.push(groupspy.demogeoXMLLoader.create())
+
 function draw_demogeo_charts(data_index) {
 	geo_chart_desc.data = geo_chart_desc.initial_data[data_index]
 	if (geo_chart_desc.chart)
 		geo_chart_desc.chart.destroy()
 	//console.log(geo_chart_desc.initial_data[data_index].toString())
 	create_pie_chart(geo_chart_desc)
+	xml_loaders[0].set_parent(geo_chart_desc)
 	
 	for (var i = 0, l = demo_descriptions.length; i < l; i++) {
 		var series = create_demo_stratas(demo_descriptions[i].initial_data[data_index], demos[i][0], demos[i][1])
 		demo_descriptions[i].data = series
-		absolute_to_percents_in_array(series)
+		//absolute_to_percents_in_array(series)
 		//console.log(series.toString())
 		if (demo_descriptions[i].chart)
 			demo_descriptions[i].chart.destroy()
 		create_pie_chart(demo_descriptions[i])
-		if (!loaders_added) {
-			var loader = $("<div style='margin-left:10px;' class='pointer emphasize'>Загрузить XML</div>")[0]
-			$("#" + demo_descriptions[i].container)[0].parentNode.appendChild(loader)
-			$(loader).bind("click", function(e) {
-					//var xlsxml = chart.get_excel_xml()
-					//$("#flash-helper-saver")[0].saveFile(xlsxml)
-					//window.open('data:text/xml,' + xlsxml)
-			})			
-		}
+		xml_loaders[i + 1].set_parent(demo_descriptions[i])
 	}	
 	loaders_added = true
 }

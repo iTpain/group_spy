@@ -159,15 +159,31 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [], {
 			charts = [charts]
 		for (var i = 0, l = charts.length; i < l; i++) {
 			this.charts.push(charts[i])
-			var loader = $("<div style='margin-left:10px;' class='pointer emphasize'>Загрузить XML</div>")[0]
+			var flash_id = "flash_saver_" + (groupspy.counter++)
+			var loader = $("<div class='emphasize' style='width:100px; height:30px; margin-left:7px;'><div style='width:100px; height:30px;' id=" + flash_id + "></div></div>")[0]
+			var flash_params = {
+				menu: "false",
+				scale: "noscale",
+				allowFullscreen: "true",
+				allowScriptAccess: "always",
+				bgcolor: "#FFFFFF",
+				wmode: "transparent"
+			}
 			$("#" + charts[i].chart_options.container)[0].appendChild(loader)
-			$(loader).bind("click", (function(chart) {
+			groupspy[flash_id] = (function (chart) {
+				return function() {
+					return chart.get_excel_xml()
+				}
+			})(charts[i])
+			swfobject.embedSWF("static/swf/JSHelper_Saver.swf", flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: flash_id});
+			//console.log(groupspy)
+			/*$(loader).bind("click", (function(chart) {
 				return function(e) {
 					var xlsxml = chart.get_excel_xml()
 					//$("#flash-helper-saver")[0].saveFile(xlsxml)
 					window.open('data:text/xml,' + xlsxml)
 				}
-			})(charts[i]))
+			})(charts[i]))*/
 		}
 	},
 	
