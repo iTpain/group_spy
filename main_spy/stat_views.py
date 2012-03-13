@@ -5,6 +5,7 @@ from group_spy.main_spy.views_utils import json_response
 from datetime import datetime, timedelta
 from django.db.models import F, Sum, Count
 from django.contrib.auth.decorators import login_required
+from math import floor, ceil
 import time, json, copy
 
 #
@@ -354,7 +355,7 @@ def get_users_top(request, group_id):
 
 @login_required
 @json_response
-def get_social_actions_distribution(request, group_id, time_start, time_end):
+def get_social_actions_distribution(request, group_id, time_start, time_end, stat_id):
     time_start = datetime.fromtimestamp(int(time_start))
     time_end = datetime.fromtimestamp(int(time_end))
     past = datetime.now()
@@ -363,25 +364,42 @@ def get_social_actions_distribution(request, group_id, time_start, time_end):
     per_request = 200
     total_requests = (len(active_posts) / 200) + 1
     for i in xrange(total_requests):
-        latest_post_observations.extend(list(LatestPostObservation.objects.filter(statistics="likes").filter(post__in=active_posts[i * per_request : (i + 1) * per_request])))
+        latest_post_observations.extend(list(LatestPostObservation.objects.filter(statistics=stat_id).filter(post__in=active_posts[i * per_request : (i + 1) * per_request])))
     latest_post_observations.sort(key=lambda obs: -obs.value)    
     chosen_ids = [p.post_id for p in latest_post_observations[0 : 100]]   
-    observations = list(PostObservation.objects.filter(post__in=chosen_ids, statistics="likes"))
+    observations = list(PostObservation.objects.filter(post__in=chosen_ids, statistics=stat_id))
     observations_by_post = {}   
     for obs in observations:
         if not obs.post_id in observations_by_post:
             observations_by_post[obs.post_id] = []
         observations_by_post[obs.post_id].append(obs)
-    days = range(7)
-    hours = range(24)
+    days = [[p, 0] for p in range(7)]
+    hours = [[p, 0] for p in range(24)]
     for collection in observations_by_post.values():
         collection = [c for c in collection if c.value > 0]
         if len(collection) < 2:
             continue
+        #intraweek
+        cur_obs = collection[0]
+        cur_day = cur_obs.date.day
+        for obs in collection[1:]:
+            if obs.date.day != cur_day:
+                delta = obs.value - cur_obs.value
+                diff = float((obs.date - cur_obs.date).total_seconds()) / (3600 * 24)
+                total_days = ceil(diff)
+                cur_date = cur_obs.date
+                while cur_date <= obs.date:
+                    days[cur_date.weekday()][1] += delta / total_days
+                    cur_date += timedelta(hours=24)
+                cur_day = obs.date.day
+                cur_obs = obs
+        #intraday
         for i in xrange(len(collection) - 1):
             obs1 = collection[i]
             obs2 = collection[i + 1]
             delta_value = obs2.value - obs1.value
+            if delta_value < 0:
+                continue
             d1 = obs1.date
             d2 = obs2.date
             delta_time = d2 - d1
@@ -389,22 +407,17 @@ def get_social_actions_distribution(request, group_id, time_start, time_end):
             next_d1 = d1 + timedelta(hours=1)
             closest_to_d1 = datetime(next_d1.year, next_d1.month, next_d1.day, next_d1.hour)
             if d2 < closest_to_d1:
-                 hours[d1.hour] += delta_value
+                 hours[d1.hour][1] += delta_value
                  continue
             else:
-                hours[d1.hour] += per_second * (closest_to_d1 - d1).total_seconds()
+                hours[d1.hour][1] += per_second * (closest_to_d1 - d1).total_seconds()
             closest_to_d2 = datetime(d2.year, d2.month, d2.day, d2.hour)
-            hours[d2.hour] += per_second * (d2 - closest_to_d2).total_seconds()
+            hours[d2.hour][1] += per_second * (d2 - closest_to_d2).total_seconds()
             cur_date = closest_to_d1
             if closest_to_d2 - closest_to_d1 >= timedelta(hours=1):
                 while cur_date < closest_to_d2:
-                    hours[cur_date.hour] += 3600 * per_second
+                    hours[cur_date.hour][1] += 3600 * per_second
                     cur_date += timedelta(hours=1)
-            
-            
-           
-            if obs2.value - obs1.value < -10:
-                raise 'xx'
     #aaarg = ((datetime.now() - past).microseconds + 0.0) / 1000000
     #raise 'x'
     return {'days': {'series': days}, 'hours': {'series': hours}}

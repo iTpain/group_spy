@@ -9,6 +9,7 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'crossdomain.xml', 'main_spy.views.crossdomainXML'),
     url(r'credentials/update/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/(?P<sid>[A-Za-z0-9_]+)/(?P<secret>[A-Za-z0-9_]+)/$', 'main_spy.views.receive_vk_credentials'),
+    url(r'credentials/get_valid/$', 'main_spy.views.get_valid_credentials'),
     
     url(r'group(?P<group_id>\d+)/add/$', 'main_spy.crud_views.add_group'),
     url(r'group(?P<group_id>\d+)/delete/$', 'main_spy.crud_views.delete_group'),   
@@ -22,7 +23,7 @@ urlpatterns = patterns('',
     url(r'group(?P<group_id>\d+)/all_user_stats_snapshots/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_series_group_wide_all_user_stats'),
     url(r'group(?P<group_id>\d+)/all_social_stats_finals/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/(?P<content_types>[a-z_,]*)/$', 'main_spy.stat_views.get_all_stats_series_for_posts'),
     url(r'group(?P<group_id>\d+)/latest_demogeo_snapshot/(?P<time>[0-9]+)/$', 'main_spy.stat_views.get_demogeo_snapshot'),
-    url(r'group(?P<group_id>\d+)/social_actions_distribution/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_social_actions_distribution'),
+    url(r'group(?P<group_id>\d+)/social_actions_distribution/(?P<stat_id>[a-z_]+)/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_social_actions_distribution'),
     url(r'group(?P<group_id>\d+)/users_top/$', 'main_spy.stat_views.get_users_top'),
     
     url(r'group(?P<group_id>\d+)/posts/(?P<start>[0-9]+)/(?P<count>[0-9]+)/(?P<only_by_group>[a-z]+)/$', 'main_spy.crud_views.get_posts'),

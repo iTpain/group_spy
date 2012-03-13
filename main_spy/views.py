@@ -8,7 +8,7 @@ from django.template import RequestContext
 from django.http import HttpResponse
 from group_spy import settings
 from group_spy.crawler.vk import VKCrawler
-from group_spy.main_spy.models import Group, ScanStats, GroupObservation, Post
+from group_spy.main_spy.models import Group, ScanStats, GroupObservation, Post, User, UserSocialAction
 from django.db.models import Avg
 from django.contrib.auth.decorators import login_required
 import group_spy.settings
@@ -77,9 +77,13 @@ def groups_main(request):
     velocity_per_second = 200
     needed_per_second =  users_count / float(settings.GROUPS_SCAN_INTERVAL)
     credentials_needed = int(needed_per_second / velocity_per_second) + 1
-   
-    valid_credentials_count = len(get_credentials())
-    return render_to_response ('groups.html', {'credentials_ok': valid_credentials_count >= credentials_needed, 
-            'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups,  'username': request.user.username,
-            'credentials_count': valid_credentials_count, 'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
+
+    return render_to_response ('groups.html', {'social_actions_stored': UserSocialAction.objects.count(),
+            'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups,  'username': request.user.username, 'accounts_stored': User.objects.count(),
+            'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
+
+@login_required
+@json_response
+def get_valid_credentials(request):
+    return get_credentials()
  

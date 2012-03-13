@@ -7,6 +7,7 @@ var messages_list = [
 	'group_frame_activate',
 	'posts_frame_activate',
 	'usertop_frame_activate',
+	'sa_distribution_frame_activate',
 	'group_added',
 	'group_removed'
 ]
