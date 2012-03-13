@@ -63,10 +63,16 @@ class PostObservation(models.Model):
     post = models.ForeignKey(Post, null=True, db_index=True)
     statistics = models.CharField(max_length=32, db_index=True)
     
+    def __str__(self):
+        return "<" + str(self.post_id) + ", " + str(self.statistics) + ", " + str(self.value) + ">"
+    
 class LatestPostObservation(models.Model):
     value = models.IntegerField()
     post = models.ForeignKey(Post, null=True, db_index=True)
     statistics = models.CharField(max_length=32, db_index=True)
+    
+    def __str__(self):
+        return "<" + str(self.post_id) + ", " + str(self.value) + ">"
     
 class GroupObservation(models.Model):
     date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)
