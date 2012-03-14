@@ -60,18 +60,31 @@ class VKCrawler(object):
         return good_credentials
     
     def get_profiles(self, uids):
-        return (user for user in self.set_generator({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city'}, 'uids', uids))
+        return (user for user in self.set_generator({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city,country'}, 'uids', uids))
     
     def get_cities(self, cids):
         return (city for city in self.set_generator({'method': 'places.getCityById'}, 'cids', cids))
+    
+    def get_countries(self, cids):
+        return (city for city in self.set_generator({'method': 'places.getCountryById'}, 'cids', cids))
                
     def get_groups(self, gids):
         return (group for group in self.set_generator({'method': 'groups.getById'}, 'gids', gids))       
-                
-    def get_group_members(self, gid):
+    
+    def get_group_members_count(self, gid):
+        request = VKRequest(self._credentials_list[0])
+        response = request.blocking_request({'method': 'groups.getMembers', 'gid': gid, 'offset': 0, 'count': 1})
+        return response['count']
+              
+    def get_group_members(self, gid, initial_offset = 0, max_number_to_return = 1000000000):
         params = {'method': 'groups.getMembers', 'gid': gid}
-        for member in self.generic_countable_objects_generator(params, lambda r: r['users'], lambda r: True, 1000):
-            yield member
+        already_returned = 0
+        for member in self.generic_countable_objects_generator(params, lambda r: r['users'], lambda r: True, 1000, initial_offset):
+            if already_returned < max_number_to_return:
+                already_returned += 1
+                yield member
+            else:
+                return
                 
     def get_posts_from_group(self, gid, from_time = 0):
         params = {'method': 'wall.get', 'owner_id': gid}
@@ -136,8 +149,8 @@ class VKCrawler(object):
                 for data_piece in r:
                     yield data_piece
     
-    def generic_countable_objects_generator (self, request_params, fetch_array_func, filter_func, count = 0):
-        offset = 0
+    def generic_countable_objects_generator (self, request_params, fetch_array_func, filter_func, count = 0, initial_offset = 0):
+        offset = initial_offset
         if count == 0:
             count = self._count_per_load
         while True:

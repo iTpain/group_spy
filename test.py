@@ -15,6 +15,7 @@ from group_spy.main_spy.post_scan import PostsScanner
 from group_spy.main_spy.user_scan import UserScanner
 from group_spy.main_spy.models import Post, LatestPostObservation, PostObservation, GroupObservation, Group, PostAttachment, User, UserSocialAction
 from datetime import datetime
+from threading import Thread
 
 """
 past = datetime.now()
@@ -31,6 +32,40 @@ exit()
 
 from group_spy.crawler.vk import VKCrawler
 from group_spy.utils.misc import get_vk_crawler
+from group_spy.apps.user_slicer import slice_group_users
+
+groups = [
+28477986, 
+21118635, 
+5858244
+,18099999
+,7029945
+,1719791
+,460389
+,23180464
+,32535747
+,29246653
+,25346844
+,28468381
+,3807937
+,26858816
+,23378353]
+
+for g in groups:
+    print ""
+    print ""
+    print "Группа " + str(g)
+    slice_group_users(str(g), 50000, 
+    [{
+        'key': 'country_name',
+        'tree': {
+            'op': 'eq',
+            'arg1': {'op': 'v', 'arg1': 'Казахстан'},
+            'arg2': {'op': 'x'}
+        }
+    }]                                    
+    )
+exit()
 
 """
 l = len(Post.objects.all())

@@ -13,7 +13,7 @@ def get_credentials():
             return None
         credentials_list = [c for c in credentials if isinstance(c, dict) and len([r for r in required_credentials if not r in c]) == 0]
         good_credentials_list = VKCrawler(credentials_list).test_current_credentials()     
-        print good_credentials_list
+        #print good_credentials_list
         if len(good_credentials_list) == 0:
             return None
         else:
@@ -23,7 +23,6 @@ def get_credentials():
     
 def get_vk_crawler():
     credentials = get_credentials ()
-    print credentials
     if credentials == None:
         return None
     else:

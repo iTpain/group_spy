@@ -3,6 +3,30 @@ import urllib2
 import json
 from group_spy.logger.error import LogError
 import time
+from datetime import datetime
+
+def is_user_banned(profile):
+	return profile['photo'] == 'http://vk.com/images/deactivated_c.gif'
+
+def augment_profiles_with_extended_geo_info(crawler, profiles):
+	countries = {str(country['cid']): country['name'] for country in crawler.get_countries([c for c in {p['country'] for p in profiles if 'country' in p}])}
+	cities = {city['cid']: city['name'] for city in crawler.get_cities([c for c in {p['city'] for p in profiles if 'city' in p}])}
+	for p in profiles:
+		if 'city' in p and p['city'] in cities:
+			p['city_name'] = cities[p['city']]
+		if 'country' in p and p['country'] in countries:
+			p['country_name'] = countries[p['country']]
+	return profiles
+
+def augment_profiles_with_extended_age_info(profiles):
+	now_year = datetime.now().year
+	for p in profiles:
+		if 'bdate' in p:
+			pieces = p['bdate'].split(".")
+			for piece in pieces:
+				if len(piece) == 4:
+					p['age'] = now_year - int(piece)
+	return profiles
 
 class VKRequest (object):
 	

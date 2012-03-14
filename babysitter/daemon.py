@@ -10,23 +10,23 @@ from email.mime.text import MIMEText
 
 COMMASPACE = ', '
 
-def send_mail(text):
+def send_mail(text, to):
     msg = MIMEText(text)
     msg['Subject'] = "Group spy needs your assistance"
     msg['From'] = "group_spy"
-    msg['To'] = COMMASPACE.join (settings.COMPLAIN_TO)
+    msg['To'] = COMMASPACE.join(to)
     gmail_user = 'an@nlomarketing.ru'
     gmail_pwd = 'serotonin'
     s = smtplib.SMTP("smtp.gmail.com", 587)
     s.ehlo()
     s.starttls()
     s.login(gmail_user, gmail_pwd)
-    s.sendmail("group_spy", settings.COMPLAIN_TO, msg.as_string())
+    s.sendmail("group_spy", to, msg.as_string())
     s.quit()    
 
 def complainAndSleep():
     try:
-        send_mail("Hello, this is the mighty group spy. I need your assistance with VK credentials, mortal. Please help by visiting this application: http://vkontakte.ru/app2673575.")
+        send_mail("Hello, this is the mighty group spy. I need your assistance with VK credentials, mortal. Please help by visiting this application: http://vkontakte.ru/app2673575.", settings.COMPLAIN_TO)
     except Exception as e:
         print e
         print "Failed to send an e-mail to admins"
@@ -61,7 +61,7 @@ def launch(scanner_classes, scan_intervals):
                     print "Current timing: " + str(current_intervals)
                     print "Next scan scheduled in " + str(timedelta(seconds=max(0, current_intervals[index])))
                     if (current_intervals[index] < 0):
-                        send_mail("Hello, this is the mighty group spy. The scan interval is too short. You should consider increasing it or supplying more credentials via http://vkontakte.ru/app2673575.")
+                        send_mail("Hello, this is the mighty group spy. The scan interval is too short. You should consider increasing it or supplying more credentials via http://vkontakte.ru/app2673575.", settings.COMPLAIN_TO)
             min_time = min(current_intervals)
             if min_time > 0:
                 print "sleeping for " + str(timedelta(seconds=min_time))
