@@ -59,9 +59,9 @@ class VKRequest (object):
 		for l in sig_list:
 			hashee += l['key'] + "=" + str (l['value'])
 		hashee += self._secret
-		md5hash = hashlib.md5 ()
+		md5hash = hashlib.md5()
 		md5hash.update (hashee)
-		sig = md5hash.hexdigest ()
+		sig = md5hash.hexdigest()
 		return sig
 	
 	def vk_create_url (self, params):

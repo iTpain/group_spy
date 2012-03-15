@@ -173,8 +173,6 @@ class GroupScanner(object):
         stratas = {}
         for p in profiles:
             age = self.get_age_strata(p)
-            if age == 'undefined':
-                continue
             sex = self.get_sex_strata(p)
             education = self.get_education_strata(p)
             final_strata = age + ":" + sex + ":" + education
@@ -189,4 +187,5 @@ class GroupScanner(object):
             print str(k) + ": " + str(v)
             obs.save ()
         group.last_scanned = datetime.now()
-        group.save ()     
+        group.save () 
+            

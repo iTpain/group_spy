@@ -9,44 +9,30 @@
 		var groups_info = [0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}]
 		groups_info.shift()
 	</script>
+	<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
+	{% if debug %}
 	<script src="{{ STATIC_URL }}js/js_external/swfobject.js"></script>
-	<script>
-		var params = {
-			menu: "false",
-			scale: "noScale",
-			allowFullscreen: "true",
-			allowScriptAccess: "always",
-			wmode: "window"
-		}
-		var attributes = {
-			id:"flash-helper-saver"
-		}
-		swfobject.embedSWF(
-			"{{ STATIC_URL }}swf/JSHelper_Saver.swf", 
-			"flash-helper-saver", "400", "100", "10.0.0", 
-			"", 
-			{}, params, attributes);
-	</script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/swfobject.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery-ui.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.dataTables.min.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.DOMWindow.js"></script>
-	<script src="{{ STATIC_URL }}js/js_external/highcharts.js" type="text/javascript"></script>
-	<script src="{{ STATIC_URL }}js/js_external/highstock.js" type="text/javascript"></script>
+	<script src="{{ STATIC_URL }}js/js_external/highcharts.js"></script>
+	<script src="{{ STATIC_URL }}js/js_external/highstock.js"></script>
 	<script src="{{ STATIC_URL }}js/groupspy-common.js"></script>
 	<script src="{{ STATIC_URL }}js/localization.js"></script>
-	<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
 	<script src="{{ STATIC_URL }}js/jsage/core.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/main-screen.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/main-charts-frame/main-charts-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/posts-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/usertop-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/sa-distribution-charts-widget.js"></script>
+	{% else %}
+	<script src="{{ STATIC_URL }}js/global.js"></script>
+	{% endif %}
 </head>
 <body>
 <div>
-	<!--<div style="width:400px; height:100px;"><div id="flash-helper-saver"></div></div>-->
 	<div id="group_info_updater">
 		<div class="group_updater_header">Группа <span id="group_updater_header"></span></div>
 		<input type="hidden" id="group_id_hidden_input" />

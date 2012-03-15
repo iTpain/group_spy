@@ -1,5 +1,5 @@
-new Module('ui/main-charts-frame/main-charts-frame.js', ['jsage/eventbus.js', 'ui/main-charts-frame/main-charts-widget.js', 'ui/main-charts-frame/snapshot-lower-widget.js',
-														 'ui/main-charts-frame/stats-snapshot-widget.js', 'ui/main-charts-frame/demogeo-snapshot-widget.js'], function () {
+new Module('ui/main-charts-frame/main-charts-frame.js', ['jsage/eventbus.js', 'ui/main-charts-frame/main-charts-widget.js', 'ui/main-charts-frame/snapshot-lower-widget.js', 'ui/main-charts-frame/stats-snapshot-widget.js', 'ui/main-charts-frame/demogeo-snapshot-widget.js'], function () {
+
 $(document).ready(function() {
 
 groupspy.BaseChartsFrame = new jsage.Class('BaseChartsFrame', [jsage.GlobalMessagingObject], {

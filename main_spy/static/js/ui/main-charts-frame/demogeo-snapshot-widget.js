@@ -107,13 +107,14 @@ window.create_demo_stratas = function(data, params, filters) {
 
 var geo_chart_desc = {container: 'geo_snapshot_chart', width: 400, height: 400, title: 'Распределение участников по городам', size: 150}
 
-var ages_stratas = [['0-11'], ['12-15'], ['16-18'], ['19-21'], ['22-24'], ['25-27'], ['28-30'], ['31-35'], ['36-45'], ['46-120']]
+var ages_stratas = [['undefined'], ['0-11'], ['12-15'], ['16-18'], ['19-21'], ['22-24'], ['25-27'], ['28-30'], ['31-35'], ['36-45'], ['46-120']]
+var ages_filter = ages_stratas.slice(1).map(function (el) { return el[0] })
 var demos = [
 	[{age: [], education: [], sex: [['man'], ['woman']]}, null],
 	[{age: [], education: [['higher'], ['other']], sex: []}, null],
-	[{age: ages_stratas, education: [], sex: []}, null],
-	[{age: ages_stratas, education: [], sex: []}, {sex: ['man']}],
-	[{age: ages_stratas, education: [], sex: []}, {sex: ['woman']}]
+	[{age: ages_stratas, education: [], sex: []}, {age: ages_filter}],
+	[{age: ages_stratas, education: [], sex: []}, {sex: ['man'], age: ages_filter}],
+	[{age: ages_stratas, education: [], sex: []}, {sex: ['woman'], age: ages_filter}]
 ]
 
 var demo_descriptions = [
@@ -225,6 +226,11 @@ function create_pie_chart(chart_desc) {
 		plotOptions: {
 			pie: {
 				size: chart_desc.size
+			}
+		},
+		tooltip: {
+			formatter: function() {
+				return this.point.name + ": " + this.y + " " + this.percentage.toPrecision(3) + "%"
 			}
 		},
 		series: [{

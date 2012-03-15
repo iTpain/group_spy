@@ -48,11 +48,13 @@ groupspy.UsertopFrame = new jsage.Class('UsertopFrame', [jsage.GlobalMessagingOb
 		this.ajax_token = group_id
 		var token = group_id
 		var that = this
+		$("#usertop-table").fadeTo(1, 0.5)
 		$.ajax({
 			url: "group" + group_id + "/users_top/",
 			success: function(data) {
 				if (that.ajax_token != token)
 					return
+				$("#usertop-table").fadeTo(1, 1)
 				that.table.fnClearTable()
 				var table_data = []
 				var data = data.response

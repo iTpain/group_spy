@@ -1,4 +1,4 @@
-new Module('ui/sa-distribution-charts-widget.js', ['ui/charts-widget.js', 'ui/charts-creator.js', 'jsage/eventbus.js',], function() {
+new Module('ui/sa-distribution-charts-widget.js', ['ui/charts-widget.js', 'ui/charts-creator.js', 'jsage/eventbus.js'], function() {
 
 groupspy.SADistributionChartsWidget = new jsage.Class('SADistributionChartsWidget', [groupspy.ChartsWidget, jsage.GlobalMessagingObject], {
 	

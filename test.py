@@ -34,6 +34,11 @@ from group_spy.crawler.vk import VKCrawler
 from group_spy.utils.misc import get_vk_crawler
 from group_spy.apps.user_slicer import slice_group_users
 
+from group_spy.asset_cook import walk_directory_recursively, process_templates
+
+process_templates("c:\\projects\\group_spy\\main_spy\\templates\\", "c:\\projects\\group_spy\\main_spy\\static\\js\\", "")
+exit()
+"""
 groups = [
 28477986, 
 21118635, 
@@ -66,6 +71,7 @@ for g in groups:
     }]                                    
     )
 exit()
+"""
 
 """
 l = len(Post.objects.all())
