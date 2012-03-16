@@ -78,7 +78,7 @@ def groups_main(request):
     needed_per_second =  users_count / float(settings.GROUPS_SCAN_INTERVAL)
     credentials_needed = int(needed_per_second / velocity_per_second) + 1
 
-    return render_to_response ('groups.html', {'social_actions_stored': UserSocialAction.objects.count(), 'debug': False,
+    return render_to_response ('groups.html', {'social_actions_stored': UserSocialAction.objects.count(),
             'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups,  'username': request.user.username, 'accounts_stored': User.objects.count(),
             'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
 

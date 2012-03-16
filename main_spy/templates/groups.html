@@ -8,9 +8,13 @@
 	<script>
 		var groups_info = [0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}]
 		groups_info.shift()
+		if (!window.ASSETS)
+			var ASSETS = {
+				"swf/JSHelper_Saver.swf": "swf/JSHelper_Saver.swf",
+				"img/ajax-loader.gif": "img/ajax-loader.gif"
+			}
+		var STATIC_PATH = "{{ STATIC_URL }}"
 	</script>
-	<script>var PATH_TO_JAVASCRIPTS = "{{ STATIC_URL }}js/"</script>
-	{% if debug %}
 	<script src="{{ STATIC_URL }}js/js_external/swfobject.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/jquery.js"></script>
 	<script src="{{ STATIC_URL }}js/js_external/swfobject.js"></script>
@@ -27,9 +31,6 @@
 	<script src="{{ STATIC_URL }}js/ui/posts-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/usertop-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/sa-distribution-charts-widget.js"></script>
-	{% else %}
-	<script src="{{ STATIC_URL }}js/global.js"></script>
-	{% endif %}
 </head>
 <body>
 <div>

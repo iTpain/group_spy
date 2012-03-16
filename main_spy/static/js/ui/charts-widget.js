@@ -57,7 +57,7 @@ groupspy.ChartsWidget = new jsage.Class('ChartsWidget', [], {
 					return chart.get_excel_xml()
 				}
 			})(charts[i])
-			swfobject.embedSWF("static/swf/JSHelper_Saver.swf", flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: flash_id});
+			swfobject.embedSWF("static/" + ASSETS["swf/JSHelper_Saver.swf"], flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: flash_id});
 		}
 	}
 	

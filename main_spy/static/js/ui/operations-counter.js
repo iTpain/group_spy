@@ -8,7 +8,7 @@ groupspy.OperationsCounter = new jsage.Class('OperationsCounter', [jsage.BaseUIO
 	
 	init: function(div) {
 		this.elements = this.process_template(this.template)
-		this.elements.picture.style.background = "url('" + PATH_TO_JAVASCRIPTS + "ui/ajax-loader.gif')"
+		this.elements.picture.style.background = "url(static/" + ASSETS["img/ajax-loader.gif"] + ")"
 		this.elements.main.style.display = 'none'
 		div.appendChild (this.elements['main'])
 		this.subscribe(groupspy.messages.active_ajax_count_changed, this.operations_count_changed)

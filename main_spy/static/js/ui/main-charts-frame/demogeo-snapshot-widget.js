@@ -149,7 +149,7 @@ groupspy.demogeoXMLLoader = new jsage.Class('demogeoXMLLoader', [], {
 			groupspy[this.flash_id] = function (chart) {
 				return that.get_excel_xml()
 			}
-			swfobject.embedSWF("static/swf/JSHelper_Saver.swf", this.flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + this.flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: this.flash_id});
+			swfobject.embedSWF("static/" + ASSETS["swf/JSHelper_Saver.swf"], this.flash_id, "100%", "100%", "10.0.0", "expressInstall.swf", {defaultName:"report.xml", jsCallback: "groupspy." + this.flash_id, text: "Загрузить XML", width: 100, height: 30}, flash_params, {id: this.flash_id});
 			this.gui_has_parent = true
 		}
 		this.chart_desc = chart_desc 

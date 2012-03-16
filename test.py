@@ -36,8 +36,8 @@ from group_spy.apps.user_slicer import slice_group_users
 
 from group_spy.asset_cook import walk_directory_recursively, process_templates
 
-process_templates("c:\\projects\\group_spy\\main_spy\\templates\\", "c:\\projects\\group_spy\\main_spy\\static\\js\\", "")
-exit()
+#process_templates("c:/projects/group_spy/main_spy/templates", "c:/projects/group_spy/main_spy/static")
+#exit()
 """
 groups = [
 28477986, 
