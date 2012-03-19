@@ -1,5 +1,5 @@
 from group_spy import settings
-from group_spy.utils.misc import get_credentials
+from group_spy.utils.vk import VKCredentialsCollection
 from group_spy.crawler.vk import VKCrawler
 from group_spy.logger.error import LogError
 from group_spy.main_spy.models import ScanStats
@@ -35,13 +35,14 @@ def complainAndSleep():
 def launch(scanner_classes, scan_intervals): 
     current_intervals = [0*s for s in scan_intervals]
     while True:
-        credentials = get_credentials()
-        if credentials == None:
+        credentials = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
+        if not credentials.get_credentials():
+            print "No good credentials found, falling asleep"
             complainAndSleep()
             continue
         
         try:
-            print "Useful credentials found: " + str(len(credentials))
+            print "Useful credentials found: " + str(len(credentials.get_credentials()))
             crawler = VKCrawler(credentials)
             for index, time_left in enumerate(current_intervals):
                 if time_left <= 0:
@@ -49,7 +50,13 @@ def launch(scanner_classes, scan_intervals):
                     scan_interval = scan_intervals[index]
                     current_intervals[index] = scan_interval
                     time_before = datetime.now()
-                    scanner_classes[index]().scan(crawler)
+                    if settings.DEBUG:
+                        scanner_classes[index]().scan(crawler)
+                    else:
+                        try:
+                            scanner_classes[index]().scan(crawler)
+                        except Exception as e:
+                            print "Scanner " + str(scanner_classes[index]) + " failure: " + str(e)
                     gc.collect()                
                     time_after = datetime.now()
                     seconds_passed = (time_after - time_before).total_seconds()
@@ -59,7 +66,7 @@ def launch(scanner_classes, scan_intervals):
                     scan_stat.save()
                     print "Scan completed in " + str(timedelta(seconds=seconds_passed))
                     print "Current timing: " + str(current_intervals)
-                    print "Next scan scheduled in " + str(timedelta(seconds=max(0, current_intervals[index])))
+                    print "Next scan of this type scheduled in " + str(timedelta(seconds=max(0, current_intervals[index])))
                     if (current_intervals[index] < 0):
                         send_mail("Hello, this is the mighty group spy. The scan interval is too short. You should consider increasing it or supplying more credentials via http://vkontakte.ru/app2673575.", settings.COMPLAIN_TO)
             min_time = min(current_intervals)

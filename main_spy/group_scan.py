@@ -3,7 +3,10 @@ from time import gmtime, strftime
 from group_spy.logger.error import LogError
 from datetime import datetime, timedelta
 from django.db.models import Sum
-import json
+from django.db import DatabaseError
+from group_spy.crawler.vk import FailedRequestError
+from group_spy.utils.misc import get_earliest_post_time
+import json, time
 
 def compute_group_activity(active_posts):
     stats = {"likes": 0, "comments": 0, "reposts": 0}
@@ -37,16 +40,11 @@ class GroupScanner(object):
                 print "Time now " + str(now)
                 active_posts = list(Post.objects.filter(closed=False, group=g.gid, date__lte=now - timedelta(hours=12)))
                 auditory_result = self.scan_auditory_activity(crawler, active_posts, g.gid)
-                print "auditory activity scanned"
                 users_result = self.scan_group_users(crawler, g.gid)
-                print "users scanned"
                 activity_result = compute_group_activity(active_posts)
-                print "group activity scanned"
                 self.write_observations(g, dict(dict(users_result.items() + activity_result.items()).items() + auditory_result.items()))
-                print "Group " + g.gid + " successfully scanned"
-            except Exception as e:
-                print e
-                LogError(e, "Failed to scan and save results for group " + g.gid)
+            except (FailedRequestError, DatabaseError) as e:
+                print "Something went wrong during scan of group " + str(g.gid) + ": " + str(e)
         
     def gather_groups_info(self, crawler, gids):
         try:
@@ -55,25 +53,31 @@ class GroupScanner(object):
                 group.alias = g['name']
                 group.save()
         except Exception as e:
-            LogError(e, "Failed to get groups info")
+            print "failed to gather groups info: " + str(e)
     
     def scan_auditory_activity(self, crawler, active_posts, gid):
         uids = {}
-        for post in active_posts:
-            comments_user_ids = [str(c['uid']) for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id))]
-            likes_user_ids = [str(l) for l in crawler.get_likes_for_object('post', "-" + str(post.group_id), post.pid, False)]
-            total_ids = comments_user_ids + likes_user_ids
-            for uid in total_ids:
-                if not uid in uids:
-                    uids[uid] = 0
-                uids[uid] += 1
-        #raise 7
+        active_posts_ids = [p.pid for p in active_posts]
+        min_time = time.mktime(get_earliest_post_time(active_posts).timetuple()) - 10
+        vk_posts = [p for p in crawler.get_posts_from_group("-" + gid, min_time)]
+        active_vk_posts = [p for p in vk_posts if str(p['id']) in active_posts_ids]
+        comments_and_likes = crawler.get_comments_and_likes_for_posts(active_vk_posts, "-" + gid).values()
+        comments_user_ids = [str(c['uid']) for sublist in comments_and_likes for c in sublist['comments']]
+        likes_user_ids = [str(l) for sublist in comments_and_likes for l in sublist['likes']]
+        total_ids = comments_user_ids + likes_user_ids
+        for uid in total_ids:
+            if not uid in uids:
+                uids[uid] = 0
+            uids[uid] += 1
         result = {'users_1': 0, 'users_3': 0}
         for uid in uids:
             if uids[uid] >= 3:
                 result['users_3'] += 1
             result['users_1'] += 1
-        self.analyze_demogeo(gid, [profile for profile in crawler.get_profiles([uid for uid in uids.keys()])], False, crawler)
+        try:
+            self.analyze_demogeo(gid, [profile for profile in crawler.get_profiles([uid for uid in uids.keys()])], False, crawler)
+        except (FailedRequestError, DatabaseError) as e:
+            print "failed to analyze demogeo for active auditory of group " + str(gid) + ": " + str(e)
         return result
         
     def scan_group_users(self, crawler, gid):
@@ -90,9 +94,10 @@ class GroupScanner(object):
             if p['photo'] in self.FACELESS_AVATARS:
                 faceless_users += 1
             total_users += 1
-            #print p
-        print "analyzing demogeo"
-        self.analyze_demogeo(gid, profiles, True, crawler)
+        try:
+            self.analyze_demogeo(gid, profiles, True, crawler)
+        except (FailedRequestError, DatabaseError) as e:
+            print "failed to analyze demogeo of group " + str(gid) + ": " + str(e)
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
     
     def analyze_demogeo(self, gid, profiles, whole_group, crawler):
@@ -182,10 +187,11 @@ class GroupScanner(object):
         return stratas        
         
     def write_observations(self, group, result):
+        now = datetime.now()
         for (k, v) in result.iteritems():
-            obs = GroupObservation (group_id=group.gid, date=datetime.now(), value=v, statistics=k)
+            obs = GroupObservation(group_id=group.gid, date=now, value=v, statistics=k)
             print str(k) + ": " + str(v)
             obs.save ()
-        group.last_scanned = datetime.now()
+        group.last_scanned = now
         group.save () 
             

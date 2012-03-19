@@ -2,6 +2,15 @@ from group_spy import settings
 from group_spy.crawler.vk import VKCrawler
 from group_spy.logger.error import LogError
 import json, re, fileinput
+from datetime import datetime
+
+def get_earliest_post_time(posts):
+    min_time = datetime.fromtimestamp(10000000000)
+    for p in posts:
+        if p.date < min_time:
+            min_time = p.date
+    return min_time
+    
 
 def get_credentials():
     required_credentials= ['api_id', 'viewer_id', 'sid', 'secret']

@@ -119,6 +119,7 @@ exit()
 #        Post.objects.get(pk=p).delete()
 #exit()
 
+
 launch([UserScanner, PostsScanner, GroupScanner], [settings.USER_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
 #launch([PostsScanner], [settings.POSTS_SCAN_INTERVAL])
 #launch([GroupScanner], [settings.GROUPS_SCAN_INTERVAL])

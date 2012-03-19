@@ -2,7 +2,9 @@ from group_spy.main_spy.models import Post, Group, PostObservation, PostAttachme
 from datetime import datetime, timedelta
 import time
 from group_spy.logger.error import LogError
-from group_spy.utils.misc import list_to_quantity_dict
+from group_spy.crawler.vk import FailedRequestError
+from group_spy.utils.misc import list_to_quantity_dict, get_earliest_post_time
+from django.db import DatabaseError
 
 def iso_date_from_ts(ts):
     return datetime.fromtimestamp(ts).isoformat(' ')
@@ -18,39 +20,42 @@ class PostsScanner(object):
     def scan(self, crawler):
         groups = Group.objects.all()
         for g in groups:
-            print "Fetching new posts for group " + str(g.gid)
             try:
                 self.find_new_posts(crawler, g.gid)
-                self.update_group_posts(crawler, g.gid)
-            except LogError:
-                continue
+            except (FailedRequestError, DatabaseError) as e:
+                print "PostScanner -- error while fetching or saving new posts for group " + str(g.gid) + " due to " + str(e)      
+            self.update_group_posts(crawler, g.gid)
         print "Posts scan completed"
         
     def find_new_posts(self, crawler, gid):
+        print "Fetching new posts for group " + str(gid)
+        posts_to_add = []
         for p in crawler.get_posts_from_group("-" + str(gid)):
             try:
                 Post.objects.get(pid=p['id'], group=gid)
                 break
             except Post.DoesNotExist:
-                now = datetime.now()
-                post_date = datetime.fromtimestamp(p['date'])
-                author = None
-                if p['from_id'] != -int(gid):
-                    author_is_group = False
-                    try:
-                        author = User.objects.get(snid=p['from_id'])
-                    except User.DoesNotExist:
-                        author = User(snid=p['from_id'])
-                        author.save()
-                else:
-                    author_is_group = True
-                new_post = Post(pid=p['id'], author=author, author_is_group=author_is_group, date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
-                print "Post " + str(p['id']) + " added, date published: " + str(post_date) + " author: " + str(author) + " is group: " + str(author_is_group)
-                new_post.save()
-                for s in self._stats:
-                    latest_obs = LatestPostObservation(post=new_post, statistics=s, value=0)
-                    latest_obs.save()
-                self.create_attachments_for_post (p, new_post)
+                posts_to_add.append(p)
+        now = datetime.now()
+        for p in posts_to_add:
+            post_date = datetime.fromtimestamp(p['date'])
+            author = None
+            if p['from_id'] != -int(gid):
+                author_is_group = False
+                try:
+                    author = User.objects.get(snid=p['from_id'])
+                except User.DoesNotExist:
+                    author = User(snid=p['from_id'])
+                    author.save()
+            else:
+                author_is_group = True
+            new_post = Post(pid=p['id'], author=author, author_is_group=author_is_group, date=post_date, text=p['text'], last_scanned=now, closed=False, first_comment_date=post_date, last_comment_date=post_date, group_id=gid)
+            print "Post " + str(p['id']) + " added, date published: " + str(post_date) + " author: " + str(author) + " is group: " + str(author_is_group)
+            new_post.save()
+            for s in self._stats:
+                latest_obs = LatestPostObservation(post=new_post, statistics=s, value=0)
+                latest_obs.save()
+            self.create_attachments_for_post (p, new_post)
                 
     def create_attachments_for_post(self, vk_data, post):
         has_attachments = False
@@ -67,50 +72,51 @@ class PostsScanner(object):
     
     def update_group_posts(self, crawler, gid):
         active_posts = list(Post.objects.filter(closed=False, group=gid))
-        min_time = datetime.fromtimestamp(10000000000)
-        for p in active_posts:
-            if p.date < min_time:
-                min_time = p.date
-        #some rounding or conversion error has occured rarely from putting post.date fetched from to database (1-2 secs)
-        timestamp = time.mktime(min_time.timetuple()) - 10
+        # some rounding or conversion error has occured rarely from putting post.date fetched from to database (1-2 secs)
+        timestamp = time.mktime(get_earliest_post_time(active_posts).timetuple()) - 10
         found_posts_ids = {}
-        for p in crawler.get_posts_from_group("-" + gid, timestamp):
-            found_posts_ids[str(p['id'])] = True
-            try:
-                post = (po for po in active_posts if str(po.pid) == str(p['id'])).next()
-                post_comments = [c for c in crawler.get_comments_for_post(post.pid, "-" + str(post.group_id))]
-                self.update_post(crawler, post, p, post_comments)
-                self.update_user_activity_for_post(crawler, post, post_comments)
-            except StopIteration:
-                continue
+        try:
+            vk_posts = [p for p in crawler.get_posts_from_group("-" + gid, timestamp)]
+        except FailedRequestError:
+            print "failed to fetch posts for group " + str(gid)
+            return
+        for p in vk_posts:
+            found_posts_ids[str(p['id'])] = p
         # cleansing
+        posts_to_update = []
         for p in active_posts:
             if not p.pid in found_posts_ids:
                 print "Deleting probably spam post " + p.pid
                 p.delete()
+            else:
+                posts_to_update.append((p, found_posts_ids[p.pid]))
+        try:
+            comments_and_likes = crawler.get_comments_and_likes_for_posts([p[1] for p in posts_to_update], "-" + gid)
+        except FailedRequestError:
+            print "failed to fetch comments and likes for posts of group " + str(gid)
+            return
+        for (db_post, vk_post) in posts_to_update:
+            comments = comments_and_likes[vk_post['id']]['comments']
+            self.update_post(db_post, vk_post, comments)
+            self.update_user_activity_for_post(db_post, comments, comments_and_likes[vk_post['id']]['likes'])                   
     
-    def update_comments_for_post(self, crawler, post, source):
+    def update_comments_for_post(self, post, source):
         if len(source) == 0:
             return       
         ids_table = self.add_non_existing_users_to_db([c['uid'] for c in source])
-        all_saved_actions = list(UserSocialAction.objects.filter(post=post, user__in=ids_table.values()))
+        all_saved_actions = {action.content_id for action in UserSocialAction.objects.filter(post=post, type="comment")}
         for c in source:
-            try:
-                (action for action in all_saved_actions if str(c['cid']) == action.content_id).next()
-            except StopIteration:
+            if not str(c['cid']) in all_saved_actions:
                 print "adding comment " + str(c["cid"])
                 UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c['uid']], content_id=c['cid'], type="comment", date=datetime.fromtimestamp(c['date']))
-        #social_actions = 
     
-    def update_likes_for_post(self, crawler, post, source):
+    def update_likes_for_post(self, post, source):
         if len(source) == 0:
             return
         ids_table = self.add_non_existing_users_to_db([c for c in source])
-        all_saved_actions = list(UserSocialAction.objects.filter(post=post, user__in=ids_table.values(), type="like"))
+        all_saved_actions = {action.user_id for action in UserSocialAction.objects.filter(post=post, type="like")}
         for c in source:
-            try:
-                (action for action in all_saved_actions if ids_table[c] == action.user_id).next()
-            except StopIteration:
+            if not ids_table[c] in all_saved_actions:
                 print "adding like " + str(c)
                 UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c], content_id="", type="like", date=datetime.now())        
     
@@ -124,12 +130,12 @@ class PostsScanner(object):
                 in_db_users[u] = new_user.id          
         return in_db_users
          
-    def update_user_activity_for_post(self, crawler, post, post_comments):
-        self.update_comments_for_post(crawler, post, post_comments)
-        self.update_likes_for_post(crawler, post, [like for like in crawler.get_likes_for_object('post', "-" + str(post.group_id), post.pid, False)])
+    def update_user_activity_for_post(self, post, comments, likes):
+        self.update_comments_for_post(post, comments)
+        self.update_likes_for_post(post, likes)
             
-    def update_post(self, crawler, post, post_fresh_vk_data, comments):
-        now = iso_date_from_ts(time.time())
+    def update_post(self, post, post_fresh_vk_data, comments):
+        now = datetime.now()
         print "Updating post " + str(post.pid)
         post.last_scanned = now
         min_time_comment = 10000000000
@@ -142,7 +148,7 @@ class PostsScanner(object):
                 min_time_comment = c['date']
         post.first_comment_date = post.first_comment_date if min_time_comment == 10000000000 else datetime.fromtimestamp(min_time_comment)
         post.last_comment_date = datetime.fromtimestamp(max_time_comment)
-        if datetime.now() - post.last_comment_date > timedelta(days=8):
+        if now - post.last_comment_date > timedelta(days=8):
             post.closed = True
             print "Closing post " + str(post.pid)
         for s in self._stats:
