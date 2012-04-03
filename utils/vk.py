@@ -49,17 +49,18 @@ class VKCredentialsCollection(object):
 		self._collection = {VKCredentials(r['api_id'], r['viewer_id'], r['secret'], r['sid'], self) for r in raw_set.values()}
 		self.test_all_credentials()
 	
-	def add_new_credentials_checked(self, credentials):
+	def add_new_tested_credentials(self, credentials):
 		try:
-			same_viewer = (c for c in self._collection if c._viewer_id == credentials._viewer_id).next()
+			same_viewer = (c for c in self._collection if c._viewer_id == credentials._viewer_id and c._api_id == credentials._api_id).next()
 			self._collection.remove(same_viewer)
-			self._collection.add(credentials)
 		except StopIteration:
+			pass
+		finally:
 			self._collection.add(credentials)
 			
-	def remove_credentials_by_viewer(self, viewer_id):
+	def remove_credentials_by_viewer(self, viewer_id, api_id):
 		try:
-			credentials = (c for c in self._collection if c._viewer_id == viewer_id).next()
+			credentials = (c for c in self._collection if c._viewer_id == viewer_id and c._api_id == api_id).next()
 			self._collection.remove(credentials)
 		except StopIteration:
 			pass
@@ -89,6 +90,7 @@ class VKCredentials (object):
 		self._viewer_id = viewer_id
 		self._sid = sid
 		self._secret = secret
+		self._api_id = api_id
 		self._service_params = {'format' : 'JSON', 'v': '3.0', 'api_id': api_id}
 		self._valid = True
 		self._parent_collection = parent_collection
@@ -104,7 +106,7 @@ class VKCredentials (object):
 		try:
 			self.blocking_request({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city,country', 'uids': '1'})
 		except:
-			pass
+			self._valid = False
 	
 	def _create_params (self, params):
 		res = {}
@@ -159,7 +161,7 @@ class VKCredentials (object):
 					return parsed['response']
 				else:
 					error = parsed['error']
-					print error
+					#print error
 					if not 'error_code' in error:
 						#print "malformed vk response"
 						raise NetworkError()
@@ -169,7 +171,7 @@ class VKCredentials (object):
 					elif error_code == 6:
 						raise TooManyRequestsError()
 					else:
-						#print error['error_msg']
+						print error['error_msg']
 						raise VKAPIError(error)
 			except NetworkError as err:
 				retries -= 1

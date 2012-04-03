@@ -14,14 +14,14 @@ def walk_directory_recursively(path, ext=None):
         dirname = dirname.replace("\\", "/")
         print directories
         for file_name in file_names:
-            if ext == None or file.split(".")[-1] in ext:
+            if ext == None or file_name.split(".")[-1] in ext:
                 yield (dirname + "/" + file_name, file_name)
 
 def create_assets_dictionary(path):
     assets_dict = {}
     for asset in walk_directory_recursively(path, ["jpg", "png", "gif", "jpeg", "swf", "ttf"]):
         asset_id = asset[0][1 + len(path):]
-        if id.find("-XproductionX-") >= 0:
+        if asset_id.find("-XproductionX-") >= 0:
             continue
         md5hasher = md5()
         f = open(asset[0], "r")

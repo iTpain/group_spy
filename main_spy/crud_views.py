@@ -1,6 +1,5 @@
-from group_spy.main_spy.views_utils import json_response, request_vk_credentials, login_required_json_response
+from group_spy.main_spy.views_utils import request_vk_credentials, login_required_json_response
 from group_spy.main_spy.models import Group, TextCategory, PostTextCategoryAssignment, Post
-from django.contrib.auth.decorators import login_required
 from group_spy import settings
 from group_spy.utils.vk import VKCredentialsCollection, VKCredentials
 
@@ -68,10 +67,10 @@ def add_text_category(request, group_id):
     return {'id': category.id}
 
 @login_required_json_response  
-def update_text_category(request, id):
+def update_text_category(request, category_id):
     alias = request.POST['alias']
     try:
-        category = TextCategory.objects.get(pk=id)
+        category = TextCategory.objects.get(pk=category_id)
     except:
         return {'errors': ['Failed to fetch category']}
     category.alias = alias
@@ -79,8 +78,8 @@ def update_text_category(request, id):
     return {}
 
 @login_required_json_response
-def remove_text_category(request, id):
-    TextCategory.objects.get(pk=id).delete()
+def remove_text_category(request, category_id):
+    TextCategory.objects.get(pk=category_id).delete()
     return {}
 
 @login_required_json_response
@@ -108,14 +107,14 @@ def add_credentials(request, api_id, viewer_id, sid, secret):
     if not credentials.is_valid():
         return {'errors': ['Credentials seems to be broken']}
     collection = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
-    collection.add_new_credentials_checked(credentials)
+    collection.add_new_tested_credentials(credentials)
     collection.dump_to_disk()
     return {}
     
 @login_required_json_response
-def delete_credentials(request, viewer_id):
+def delete_credentials(request, viewer_id, api_id):
     collection = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
-    collection.remove_credentials_by_viewer(viewer_id)
+    collection.remove_credentials_by_viewer(viewer_id, api_id)
     collection.dump_to_disk()
     return {}
     

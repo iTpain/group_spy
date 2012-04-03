@@ -31,6 +31,7 @@
 	<script src="{{ STATIC_URL }}js/ui/posts-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/usertop-frame.js"></script>
 	<script src="{{ STATIC_URL }}js/ui/sa-distribution-charts-widget.js"></script>
+	<script src="{{ STATIC_URL }}js/ui/credentials-manager.js"></script>
 </head>
 <body>
 <div>
@@ -196,21 +197,27 @@
 	</div>
 	<div class="column" id="system-column">
 		<div class="header second-column-header" id="stats-header">Состояние системы</div>
-		<div class="system-column-subheader">Общее</div>
-		<div>Пользователей в группах: <span class='system-column-number'>{{ total_users }}</span></div>
-		<div style='margin-top:20px' class="system-column-subheader">Аккаунты</div>
-		<div>Аккаунтов используется:  <span id="credentials-count"class='system-column-number'>загрузка...</span></div>
-		<div>Рекомендуется аккаунтов: <span id="rec-credentials-count" class='system-column-number'>{{ rec_credentials_count }}</span></div>
-		<div style='margin-top:20px' class="system-column-subheader">Статистика сканеров</div>
-		{% for t in timetable %}
-			<div title='установленный интервал: {{ t.interval }}'>{{ t.label }}: <span class='system-column-number' {% if t.color %}style='color:red'{% else %}style='color:green'{% endif %}>{{ t.time }}</span></div>
-		{% endfor %}
-		<div style='margin-top:20px' class="system-column-subheader">Статистика базы данных</div>
-		<div>Хранится постов: <span class='system-column-number'>{{ total_posts }}</span></div>
-		<div>Хранится аккаунтов: <span class='system-column-number'>{{ accounts_stored }}</span></div>
-		<div>Хранится соц. действий: <span class='system-column-number'>{{ social_actions_stored }}</span></div>
-		<div style='margin-top:20px' class="system-column-subheader">Версия системы</div>
-		<div>0.1.1 alpha</div>
+		<div class="metro-scroll">
+			<div class="system-column-subheader">Общее</div>
+			<div>Пользователей в группах: <span class='system-column-number'>{{ total_users }}</span></div>
+			<div style='margin-top:20px' class="system-column-subheader">Аккаунты</div>
+			<div class='pointer' onclick="$('#credentials-widget').toggle()">Аккаунтов используется:  <span id="credentials-count" class='system-column-number'>загрузка...</span></div>
+			<div id="credentials-widget" style="display:none">
+				<div><span class="emphasize pointer" id="credentials-add-button">Добавить:</span> <input style="width:80px" id="credentials-input" type="text"/></div>
+				<div id="system-credentials-list"></div>
+			</div>
+			<div>Рекомендуется аккаунтов: <span id="rec-credentials-count" class='system-column-number'>{{ rec_credentials_count }}</span></div>
+			<div style='margin-top:20px' class="system-column-subheader">Статистика сканеров</div>
+			{% for t in timetable %}
+				<div title='установленный интервал: {{ t.interval }}'>{{ t.label }}: <span class='system-column-number' {% if t.color %}style='color:red'{% else %}style='color:green'{% endif %}>{{ t.time }}</span></div>
+			{% endfor %}
+			<div style='margin-top:20px' class="system-column-subheader">Статистика базы данных</div>
+			<div>Хранится постов: <span class='system-column-number'>{{ total_posts }}</span></div>
+			<div>Хранится аккаунтов: <span class='system-column-number'>{{ accounts_stored }}</span></div>
+			<div>Хранится соц. действий: <span class='system-column-number'>{{ social_actions_stored }}</span></div>
+			<div style='margin-top:20px' class="system-column-subheader">Версия системы</div>
+			<div>0.1.1 alpha</div>
+		</div>
 	</div>
 	<div id="control_div">
 		<div class="group" id="addgroup_div">

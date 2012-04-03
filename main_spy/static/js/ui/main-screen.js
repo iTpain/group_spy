@@ -201,16 +201,6 @@ $("body")[0].appendChild(errorsPanel.elements.container)
 // group comparison
 var group_comparison = groupspy.GroupComparisonBase.create()
 
-// download valid credentials
-$.ajax({
-	url: 'credentials/get_valid/',
-	success: function(response) {
-		var count = response.response.length;
-		var recommended = Number($("#rec-credentials-count")[0].innerHTML)
-		$("#credentials-count")[0].innerHTML = String(count)
-		$("#credentials-count").css("color", recommended > count ? "red" : "green")
-	}
-})
 
 })
 })
