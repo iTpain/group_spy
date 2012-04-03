@@ -121,12 +121,12 @@ class PostsScanner(object):
                 UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c], content_id="", type="like", date=datetime.now())        
     
     def add_non_existing_users_to_db(self, ids_list):
-        users_set = list({user_id for user_id in ids_list})
-        users_count= len(users_set)
+        users_set = list({int(user_id) for user_id in ids_list})
+        users_count = len(users_set)
         in_db_users = {}
         loaded = 0
         while users_count > loaded:
-            users_from_db = User.objects.filter(snid__in=users_set[loaded * settings.MAX_SQL_QUERY_SET_SIZE : (loaded + 1) * settings.MAX_SQL_QUERY_SET_SIZE])
+            users_from_db = list(User.objects.filter(snid__in=users_set[loaded : loaded + settings.MAX_SQL_QUERY_SET_SIZE]))
             loaded += settings.MAX_SQL_QUERY_SET_SIZE
             for u in users_from_db:
                 in_db_users[u.snid] = u.id

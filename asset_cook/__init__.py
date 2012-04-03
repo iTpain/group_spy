@@ -74,7 +74,7 @@ def process_templates(templates_path, static_path):
         template_copy = search_and_destroy(template_copy, css_path, r'<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/([/.0-9A-Za-z_-]+\.css)"/>', "<link rel='stylesheet' type='text/css' href='", "'/>", short_name, compile_css_group, {'assets': assets})
         head_start = template_copy.index("<head>")
         assets_string = "\t\n<script>var ASSETS = " + json.dumps(assets) + ";</script>"
-        f = open(template_file_name + ".fixed", "w")
+        f = open(template_file_name, "w")
         f.write(template_copy[0 : head_start + 6] + assets_string + template_copy[head_start + 6 :])
         f.close()
 
