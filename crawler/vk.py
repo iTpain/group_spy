@@ -107,7 +107,7 @@ class VKCrawler(object):
                 tasks.append({'count': max_comments, 'offset': i * max_comments, 'method': 'wall.getComments', 'sort': 'desc', 'owner_id': owner_id, 'post_id': p['id']})
         completed = 0
         while completed < len(tasks):
-            #print str(completed) + "/" + str(len(tasks))
+            print str(completed) + "/" + str(len(tasks))
             credentials = self._credentials_list.get_credentials()
             if len(credentials) == 0:
                 raise FailedRequestError()

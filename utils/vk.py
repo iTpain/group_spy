@@ -32,7 +32,10 @@ class VKCredentialsCollection(object):
 	
 	_collection = {}
 	
+	_file_path = None
+	
 	def __init__(self, file_path):
+		self._file_path = file_path
 		try:
 			credentials_handle = open (file_path, "r")
 			credentials = json.load (credentials_handle)
@@ -46,18 +49,40 @@ class VKCredentialsCollection(object):
 		raw_set = {c['viewer_id']: c for c in raw_collection}
 		self._collection = {VKCredentials(r['api_id'], r['viewer_id'], r['secret'], r['sid'], self) for r in raw_set.values()}
 		self.test_all_credentials()
-
+	
+	def add_new_credentials_checked(self, credentials):
+		try:
+			same_viewer = (c for c in self._collection if c._viewer_id == credentials._viewer_id).next()
+			self._collection.remove(same_viewer)
+			self._collection.add(credentials)
+		except StopIteration:
+			self._collection.add(credentials)
+			
+	def remove_credentials_by_viewer(self, viewer_id):
+		try:
+			credentials = (c for c in self._collection if c._viewer_id == viewer_id).next()
+			self._collection.remove(credentials)
+		except StopIteration:
+			pass
+						
+	def dump_to_disk(self):
+		f = open(self._file_path, "w")
+		all_credentials = self.get_all_credentials()
+		json.dump([c.as_dictionary() for c in all_credentials], f)
+		f.close()
+	
 	def get_credentials(self):
+		return [c for c in self._collection if c.is_valid()]
+	
+	def get_all_credentials(self):
 		return list(self._collection)
 	
 	def test_all_credentials(self):
-		#return
 		for c in list(self._collection):
 			c.test()
 		
 	def credentials_gone_bad(self, credentials):
 		print "VKCredentialsCollection -- invalid credentials found: " + str(credentials)
-		self._collection.remove(credentials)
 	
 class VKCredentials (object):
 	
@@ -71,12 +96,15 @@ class VKCredentials (object):
 	
 	_parent_collection = None
 	
-	def __init__(self, api_id, viewer_id, secret, sid, parent_collection):
+	def __init__(self, api_id, viewer_id, secret, sid, parent_collection=None):
 		self._viewer_id = viewer_id
 		self._sid = sid
 		self._secret = secret
 		self._service_params['api_id'] = api_id
 		self._parent_collection = parent_collection
+	
+	def as_dictionary(self):
+		return {'api_id': self._service_params['api_id'], 'viewer_id': self._viewer_id, 'secret': self._secret, 'sid': self._sid, 'valid': self.is_valid()}
 	
 	def is_valid(self):
 		return self._valid
@@ -85,7 +113,7 @@ class VKCredentials (object):
 		try:
 			self.blocking_request({'method': 'getProfiles', 'fields': 'sex,photo,bdate,education,city,country', 'uids': '1'})
 		except:
-			self._valid = False
+			pass
 	
 	def _create_params (self, params):
 		res = {}
@@ -160,7 +188,8 @@ class VKCredentials (object):
 				else:
 					raise err
 			except InvalidCredentialsError as err:
-				self._parent_collection.credentials_gone_bad(self)
+				if self._parent_collection:
+					self._parent_collection.credentials_gone_bad(self)
 				self._valid = False
 				raise err
 			except TooManyRequestsError as err:

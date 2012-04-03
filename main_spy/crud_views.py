@@ -1,9 +1,10 @@
-from group_spy.main_spy.views_utils import json_response, request_vk_credentials
+from group_spy.main_spy.views_utils import json_response, request_vk_credentials, login_required_json_response
 from group_spy.main_spy.models import Group, TextCategory, PostTextCategoryAssignment, Post
 from django.contrib.auth.decorators import login_required
+from group_spy import settings
+from group_spy.utils.vk import VKCredentialsCollection, VKCredentials
 
-@login_required
-@json_response
+@login_required_json_response
 @request_vk_credentials
 def add_group(request, group_id, crawler):
     try:
@@ -18,8 +19,7 @@ def add_group(request, group_id, crawler):
     except:
         return {'errors': ['Failed to save group']}
 
-@login_required   
-@json_response
+@login_required_json_response
 def delete_group(request, group_id):
     try:
         Group.objects.filter(gid=group_id).delete()
@@ -27,8 +27,7 @@ def delete_group(request, group_id):
     except:
         return {'errors': ['Failed to delete group']}
 
-@login_required   
-@json_response
+@login_required_json_response
 def update_group_info(request, group_id):
     group = Group.objects.get(gid=group_id)
     group.agency = request.POST['agency']
@@ -36,8 +35,7 @@ def update_group_info(request, group_id):
     group.save()
     return {}
 
-@login_required
-@json_response
+@login_required_json_response
 def get_posts(request, group_id, start, count, only_by_group):
     start = int(start)
     count = int(count)
@@ -48,14 +46,12 @@ def get_posts(request, group_id, start, count, only_by_group):
     posts = [{'author': p.author.snid if p.author != None else None, 'id': p.id, 'text': p.text, 'date': str(p.date), 'categories': [c.category.id for c in p.posttextcategoryassignment_set.all()]} for p in posts]
     return posts
 
-@login_required
-@json_response
+@login_required_json_response
 def get_text_categories(request, group_id):
     group = Group.objects.get(gid=group_id)
     return [{'id': c.id, 'alias': c.alias} for c in group.text_categories.all()]
 
-@login_required
-@json_response
+@login_required_json_response
 def add_text_category(request, group_id):
     alias = request.POST['alias']
     category = list(TextCategory.objects.filter(alias=alias))
@@ -71,8 +67,7 @@ def add_text_category(request, group_id):
     group.text_categories.add(category)
     return {'id': category.id}
 
-@login_required
-@json_response    
+@login_required_json_response  
 def update_text_category(request, id):
     alias = request.POST['alias']
     try:
@@ -83,22 +78,44 @@ def update_text_category(request, id):
     category.save()
     return {}
 
-@login_required    
-@json_response
+@login_required_json_response
 def remove_text_category(request, id):
     TextCategory.objects.get(pk=id).delete()
     return {}
 
-@login_required
-@json_response
+@login_required_json_response
 def associate_text_category_with_post(request, post_id, category_id):
     association = PostTextCategoryAssignment(post_id=int(post_id), category_id=int(category_id), assigned_by_human=True)
     association.save()
     return {}
 
-@login_required
-@json_response
+@login_required_json_response
 def deassociate_text_category_with_post(request, post_id, category_id):
     association = PostTextCategoryAssignment.objects.filter(post=int(post_id), category=int(category_id))
     association.delete()
     return {}
+
+@login_required_json_response
+def get_credentials(request):
+    collection = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
+    all_credentials = [c.as_dictionary() for c in collection.get_all_credentials()]
+    return all_credentials
+
+@login_required_json_response
+def add_credentials(request, api_id, viewer_id, sid, secret):
+    credentials = VKCredentials(api_id, viewer_id, secret, sid)
+    credentials.test()
+    if not credentials.is_valid():
+        return {'errors': ['Credentials seems to be broken']}
+    collection = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
+    collection.add_new_credentials_checked(credentials)
+    collection.dump_to_disk()
+    return {}
+    
+@login_required_json_response
+def delete_credentials(request, viewer_id):
+    collection = VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH)
+    collection.remove_credentials_by_viewer(viewer_id)
+    collection.dump_to_disk()
+    return {}
+    

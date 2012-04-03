@@ -8,8 +8,9 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     url(r'crossdomain.xml', 'main_spy.views.crossdomainXML'),
-    url(r'credentials/update/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/(?P<sid>[A-Za-z0-9_]+)/(?P<secret>[A-Za-z0-9_]+)/$', 'main_spy.views.receive_vk_credentials'),
-    url(r'credentials/get_valid/$', 'main_spy.views.get_valid_credentials'),
+    url(r'credentials/add/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/(?P<sid>[A-Za-z0-9_]+)/(?P<secret>[A-Za-z0-9_]+)/$', 'main_spy.crud_views.add_credentials'),
+    url(r'credentials/get/$', 'main_spy.crud_views.get_credentials'),
+    url(r'credentials/delete/(?P<viewer_id>[A-Za-z0-9_]+)/$', 'main_spy.crud_views.delete_credentials'),
     
     url(r'group(?P<group_id>\d+)/add/$', 'main_spy.crud_views.add_group'),
     url(r'group(?P<group_id>\d+)/delete/$', 'main_spy.crud_views.delete_group'),   

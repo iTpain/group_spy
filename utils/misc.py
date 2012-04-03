@@ -1,5 +1,6 @@
 from group_spy import settings
 from group_spy.crawler.vk import VKCrawler
+from group_spy.utils.vk import VKCredentialsCollection
 from group_spy.logger.error import LogError
 import json, re, fileinput
 from datetime import datetime
@@ -31,11 +32,7 @@ def get_credentials():
         return None
     
 def get_vk_crawler():
-    credentials = get_credentials ()
-    if credentials == None:
-        return None
-    else:
-        return VKCrawler(credentials)
+    return VKCrawler(VKCredentialsCollection(settings.VK_CREDENTIALS_FILE_PATH))
 
 def list_to_quantity_dict(qlist):
     qdict = {}
