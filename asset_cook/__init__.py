@@ -12,14 +12,15 @@ def walk_directory_recursively(path, ext=None):
         ext = [ext]
     for dirname, directories, file_names in os.walk(path, followlinks=True):
         dirname = dirname.replace("\\", "/")
-        for file in file_names:
+        print directories
+        for file_name in file_names:
             if ext == None or file.split(".")[-1] in ext:
-                yield (dirname + "/" + file, file)
+                yield (dirname + "/" + file_name, file_name)
 
 def create_assets_dictionary(path):
-    dict = {}
+    assets_dict = {}
     for asset in walk_directory_recursively(path, ["jpg", "png", "gif", "jpeg", "swf", "ttf"]):
-        id = asset[0][1 + len(path):]
+        asset_id = asset[0][1 + len(path):]
         if id.find("-XproductionX-") >= 0:
             continue
         md5hasher = md5()
@@ -27,15 +28,14 @@ def create_assets_dictionary(path):
         content = f.read()
         f.close()
         md5hasher.update(content)
-        hash = md5hasher.hexdigest()
-        dict[id] = inject_into_filename(id, "-XproductionX-" + hash)
-        shutil.copy2(asset[0], inject_into_filename(asset[0], "-XproductionX-" + hash))
-    return dict
+        hash_val = md5hasher.hexdigest()
+        assets_dict[asset_id] = inject_into_filename(asset_id, "-XproductionX-" + hash_val)
+        shutil.copy2(asset[0], inject_into_filename(asset[0], "-XproductionX-" + hash_val))
+    return assets_dict
         
 def search_and_destroy(file_content, path, regexp, tag, end_tag, template_name, proc, proc_params):
     index = 0
     prev_match = 0
-    group_start = 0
     js_group = []
     global_js = []
     for match in re.finditer(regexp, file_content):
@@ -99,8 +99,8 @@ def compile_css_group(css_path, css_group, template, index, assets):
         content = new_content
     hasher = md5()
     hasher.update(content)
-    hash = hasher.hexdigest()
-    file_name = template + "-" + str(index) + hash + ".css"
+    hash_val = hasher.hexdigest()
+    file_name = template + "-" + str(index) + hash_val + ".css"
     f = open(css_path + file_name, "w")
     f.write(content)
     f.close()
@@ -136,7 +136,7 @@ def compile_js_group(js_path, js_group, template, index):
         for module, deps in modules.iteritems():
             if len(deps) == 0:
                 ordered_modules.append(module)
-                for m, d in modules.iteritems():
+                for d in modules.values():
                     if module in d:
                         d.remove(module)
                 to_remove.append(module)
@@ -154,8 +154,8 @@ def compile_js_group(js_path, js_group, template, index):
     total_js = "\n\n".join(free_js)
     md5hasher = md5()
     md5hasher.update(total_js)
-    hash = md5hasher.hexdigest()
-    short_name = template + "-" + str(index) + "-" + hash + ".js"
+    hash_val = md5hasher.hexdigest()
+    short_name = template + "-" + str(index) + "-" + hash_val + ".js"
     f = open(js_path + short_name, "w")
     f.write(total_js)
     f.close()

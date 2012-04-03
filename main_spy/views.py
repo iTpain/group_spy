@@ -1,19 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-from group_spy.main_spy.views_utils import json_response, request_vk_credentials
-from group_spy.utils.misc import get_credentials
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.http import HttpResponse
 from group_spy import settings
-from group_spy.crawler.vk import VKCrawler
 from group_spy.main_spy.models import Group, ScanStats, GroupObservation, Post, User, UserSocialAction
 from django.db.models import Avg
 from django.contrib.auth.decorators import login_required
-import group_spy.settings
-import time
-from datetime import datetime, timedelta  
+from datetime import timedelta  
 
 def crossdomainXML(request):
     response = HttpResponse()
@@ -34,7 +28,7 @@ def groups_main(request):
         'label': scanner_labels[index], 
         'time': timedelta(seconds=scanner_times[index]), 
         'interval': timedelta(seconds=scanner_intervals[index])} 
-        for index, s in enumerate(scanner_classes)]
+        for index in xrange(len(scanner_classes))]
     
     users_count = 0
     for g in groups:
@@ -52,4 +46,3 @@ def groups_main(request):
             'rec_credentials_count': credentials_needed, 'total_users': users_count, 'groups': groups,  'username': request.user.username, 'accounts_stored': User.objects.count(),
             'timetable': scanner_timetable, 'total_posts': Post.objects.all().count()}, context_instance=RequestContext(request))
 
- 

@@ -1,6 +1,5 @@
 from math import ceil
-from group_spy.utils.vk import VKCredentials, InvalidCredentialsError
-from group_spy.logger.error import LogError
+from group_spy.utils.vk import InvalidCredentialsError
 from threading import Thread
 
 class FailedRequestError(Exception):
@@ -107,12 +106,11 @@ class VKCrawler(object):
                 tasks.append({'count': max_comments, 'offset': i * max_comments, 'method': 'wall.getComments', 'sort': 'desc', 'owner_id': owner_id, 'post_id': p['id']})
         completed = 0
         while completed < len(tasks):
-            print str(completed) + "/" + str(len(tasks))
+            #print str(completed) + "/" + str(len(tasks))
             credentials = self._credentials_list.get_credentials()
             if len(credentials) == 0:
                 raise FailedRequestError()
             jobs = []
-            counter = 0
             for i in xrange(len(credentials)):
                 if completed + i >= len(tasks):
                     break
@@ -130,8 +128,8 @@ class VKCrawler(object):
                 continue
         return total_result
 
-    def get_jobs_done(self, input):
-        jobs = [GenericLoadJob(r, c) for r, c in input]
+    def get_jobs_done(self, input_jobs):
+        jobs = [GenericLoadJob(r, c) for r, c in input_jobs]
         for j in jobs:
             j.start()
         for j in jobs:
@@ -157,7 +155,6 @@ class VKCrawler(object):
             if len(credentials) == 0:
                 raise FailedRequestError()
             workers_count = len(credentials)
-            prev_loaded = loaded
             job_input = []
             for i in xrange(workers_count):
                 req_dict = {key: ",".join ([str(p) for p in ids[loaded + i * self._profiles_count_per_load : loaded + (i + 1) * self._profiles_count_per_load]])}

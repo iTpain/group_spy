@@ -1,10 +1,10 @@
 from group_spy.main_spy.models import Post, Group, PostObservation, PostAttachment, LatestPostObservation, User, UserSocialAction
 from datetime import datetime, timedelta
-import time
-from group_spy.logger.error import LogError
 from group_spy.crawler.vk import FailedRequestError
-from group_spy.utils.misc import list_to_quantity_dict, get_earliest_post_time
+from group_spy.utils.misc import get_earliest_post_time
 from django.db import DatabaseError
+from group_spy import settings
+import time
 
 def iso_date_from_ts(ts):
     return datetime.fromtimestamp(ts).isoformat(' ')
@@ -121,8 +121,15 @@ class PostsScanner(object):
                 UserSocialAction.objects.create(post_id=post.id, user_id=ids_table[c], content_id="", type="like", date=datetime.now())        
     
     def add_non_existing_users_to_db(self, ids_list):
-        users_set = [unique for unique in {id for id in ids_list}]
-        in_db_users = {u.snid: u.id for u in User.objects.filter(snid__in=users_set)}
+        users_set = list({user_id for user_id in ids_list})
+        users_count= len(users_set)
+        in_db_users = {}
+        loaded = 0
+        while users_count > loaded:
+            users_from_db = User.objects.filter(snid__in=users_set[loaded * settings.MAX_SQL_QUERY_SET_SIZE : (loaded + 1) * settings.MAX_SQL_QUERY_SET_SIZE])
+            loaded += settings.MAX_SQL_QUERY_SET_SIZE
+            for u in users_from_db:
+                in_db_users[u.snid] = u.id
         for u in users_set:
             if not u in in_db_users:
                 print "adding user " + str(u)

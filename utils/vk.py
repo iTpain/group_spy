@@ -1,7 +1,6 @@
 import hashlib
 import urllib2
 import json
-from group_spy.logger.error import LogError
 import time
 from datetime import datetime, timedelta
 
@@ -46,7 +45,7 @@ class VKCredentialsCollection(object):
 			return
 		required_fields = ['api_id', 'viewer_id', 'sid', 'secret']
 		raw_collection = [c for c in credentials if isinstance(c, dict) and len([r for r in required_fields if not r in c]) == 0]
-		raw_set = {c['viewer_id']: c for c in raw_collection}
+		raw_set = {c['viewer_id'] + ":" + c['api_id']: c for c in raw_collection}
 		self._collection = {VKCredentials(r['api_id'], r['viewer_id'], r['secret'], r['sid'], self) for r in raw_set.values()}
 		self.test_all_credentials()
 	
@@ -86,22 +85,14 @@ class VKCredentialsCollection(object):
 	
 class VKCredentials (object):
 	
-	_viewer_id = ''
-	_sid = ''
-	_secret = ''
-	_service_params = {'format' : 'JSON', 'v': '3.0'}
-	_last_calls = []
-	
-	_valid = True
-	
-	_parent_collection = None
-	
 	def __init__(self, api_id, viewer_id, secret, sid, parent_collection=None):
 		self._viewer_id = viewer_id
 		self._sid = sid
 		self._secret = secret
-		self._service_params['api_id'] = api_id
+		self._service_params = {'format' : 'JSON', 'v': '3.0', 'api_id': api_id}
+		self._valid = True
 		self._parent_collection = parent_collection
+		self._last_calls = []
 	
 	def as_dictionary(self):
 		return {'api_id': self._service_params['api_id'], 'viewer_id': self._viewer_id, 'secret': self._secret, 'sid': self._sid, 'valid': self.is_valid()}
@@ -168,7 +159,7 @@ class VKCredentials (object):
 					return parsed['response']
 				else:
 					error = parsed['error']
-					#print error
+					print error
 					if not 'error_code' in error:
 						#print "malformed vk response"
 						raise NetworkError()
@@ -183,7 +174,7 @@ class VKCredentials (object):
 			except NetworkError as err:
 				retries -= 1
 				if retries >= 0:
-					sleep(0.1)
+					time.sleep(0.1)
 					continue
 				else:
 					raise err
