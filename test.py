@@ -26,18 +26,6 @@ print datetime.now() - past
 exit()
 """
 
-from group_spy.main_spy.models import User
-users = list(User.objects.all())
-d = {}
-for u in users:
-    if u.snid in d:
-        print "deleting dublicate " + str(u.snid)
-        u.delete()
-    else:
-        d[u.snid] = True
-print len(users)
-exit()
-
 
 launch([UserScanner, PostsScanner, GroupScanner], [settings.USER_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
 #launch([PostsScanner], [settings.POSTS_SCAN_INTERVAL])
