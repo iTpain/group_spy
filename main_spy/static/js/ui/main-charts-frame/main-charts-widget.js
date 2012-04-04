@@ -8,7 +8,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [groupspy.Charts
 	},
 	
 	create_user_stats_chart: function() {
-		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now)]
+		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now, true)]
 		return jsage.charts.DataChartPresentation.create([
 				{ color: '#0000ff', label: "Всего участников", id: "total_users", source: this.create_series('/group<GROUP_ID>/all_user_stats_snapshots/', 'total_users', filters)},
 				{ color: '#ff6600', label: "Без аватара", id: "faceless_users", source: this.create_series('/group<GROUP_ID>/all_user_stats_snapshots/', 'faceless_users', filters) },
@@ -34,7 +34,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [groupspy.Charts
 	},
 	
 	create_social_stats_snapshots_chart: function() {
-		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now)]
+		var filters = [jsage.charts.DefaultTimeFilter.create(this.three_months_before, this.time_now, true)]
 		return jsage.charts.DataChartPresentation.create([
 				{ color: '#00ff00', label: "Всего активных постов", id: "active_posts_count", source: this.create_series('/group<GROUP_ID>/all_social_stats_snapshots/', 'active_posts_count', filters) },
 				{ color: '#ff0000', label: "Всего лайков для а.п.", id: "active_posts_likes", source: this.create_series('/group<GROUP_ID>/all_social_stats_snapshots/', 'active_posts_likes', filters) },
@@ -61,7 +61,7 @@ groupspy.MainChartsWidget = new jsage.Class('MainChartsWidget', [groupspy.Charts
 	create_social_stats_finals_chart: function() {
 		var content_types = ['app', 'audio', 'doc', 'graffiti', 'link', 'no_attachment', 'note', 'page', 'photo', 'poll', 'posted_photo', 'video']
 		var content_types_labels = ['Приложение', "Аудио", "Документ", "Граффити", "Ссылка", "Без вложений", "Заметка", "Страница", "Фото", "Опрос", "Фото(к)", "Видео"] 
-		var filters = [jsage.charts.DefaultTimeFilter.create(this.year_before, this.time_now), groupspy.MultiChoiceFilter.create(content_types, content_types_labels)]
+		var filters = [jsage.charts.DefaultTimeFilter.create(this.year_before, this.time_now, true), groupspy.MultiChoiceFilter.create(content_types, content_types_labels)]
 		var chart = jsage.charts.DataChartPresentation.create([
 				{ color: '#ff0000', label: "лайки", id: "likes", source: this.create_series('/group<GROUP_ID>/all_social_stats_finals/', 'likes', filters) },
 				{ color: '#ff6600', label: "комментарии", id: "comments", source: this.create_series('/group<GROUP_ID>/all_social_stats_finals/', 'comments', filters) },

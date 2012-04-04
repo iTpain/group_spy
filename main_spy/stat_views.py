@@ -1,12 +1,44 @@
-from group_spy.main_spy.models import GroupObservation, Group, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation, User, UserSocialAction, PostObservation
-from group_spy.utils.misc import get_vk_crawler, get_credentials
+from group_spy.main_spy.models import GroupObservation, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation, UserSocialAction, PostObservation
 from group_spy.main_spy.group_scan import compute_group_activity
-from group_spy.main_spy.views_utils import json_response, login_required_json_response
+from group_spy.main_spy.views_utils import login_required_json_response
 from datetime import datetime, timedelta
-from django.db.models import F, Sum, Count
-from django.contrib.auth.decorators import login_required
-from math import floor, ceil
-import time, json, copy
+from django.db.models import Sum, Count
+from math import ceil
+import time, json, cPickle
+
+def memoize(limit=None):
+    cache_dict = {}
+    cache_list = []
+    def wrap(function):
+        def memoize_wrapper(*args, **kwargs):
+            key = cPickle.dumps((args, kwargs))
+            try:
+                cache_list.append(cache_list.pop(cache_list.index(key)))
+            except ValueError:
+                cache_dict[key] = function(*args, **kwargs)
+                cache_list.append(key)
+                if limit is not None and len(cache_list) > limit:
+                    del cache_dict[cache_list.pop(0)]
+            return cache_dict[key]
+        return memoize_wrapper
+    return wrap
+    
+def time_align_decorator(ts_index, te_index, modulo=3600*24, max_length=timedelta(days=2048)):
+    def wrap(func):
+        def align_time_value(value):
+            value = int(value)
+            aligned = value - (value % modulo)
+            return datetime.fromtimestamp(aligned)
+            
+        def wrapper(*args, **kwargs):
+            new_args = list(args)
+            new_args[ts_index] = align_time_value(new_args[ts_index])
+            new_args[te_index] = align_time_value(new_args[te_index])
+            if new_args[te_index] - new_args[ts_index] > max_length:
+                new_args[ts_index] = new_args[te_index] - max_length
+            return func(*new_args, **kwargs)
+        return wrapper
+    return wrap
 
 #
 #    Extract series snapshots for likes, posts count, comments, active users, etc.
@@ -27,16 +59,17 @@ def get_series_group_wide_all_user_stats(request, group_id, time_start, time_end
 def get_stats_set_group_wide(group_id, stats, time_start, time_end):
     return {s: get_series_group_wide_inner(group_id, s, time_start, time_end) for s in stats}
 
+@time_align_decorator(ts_index=2, te_index=3)
+@memoize(limit=2048)
 def get_series_group_wide_inner(group_id, stat_id, time_start, time_end):
     all_objects = GroupObservation.objects.filter(group=group_id, statistics=stat_id)
-    series = get_series_from(all_objects, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
+    series = get_series_from(all_objects, time_start, time_end)
     return {'series': series}
 
 def get_series_from(objects, time_start, time_end):
-    interval = time_end - time_start
-    quanta = choose_quanta(interval)
-    method = get_extraction_method_for_interval(interval, quanta)
-    return method(objects, quanta, time_start, time_end)
+    #interval = time_end - time_start
+    #quanta = choose_quanta(interval)
+    return wholesale_extract(objects, timedelta(days=1), time_start, time_end)
 
 def choose_quanta(interval):
     if interval > timedelta(days=365):
@@ -55,27 +88,6 @@ def choose_max_absolute_error(interval):
         return timedelta(hours=12)
     else:
         return timedelta(hours=1)
-
-def pointwise_extract(objects, quanta, time_start, time_end):
-    current_time = time_start
-    prepped_data = []
-    first_intersection_flag = False
-    while current_time <= time_end:
-        obs = list(objects.filter(date__gte=current_time)[0:1])
-        if len(obs) == 0:
-            break
-        else:
-            prepped_data.append([1000 * time.mktime(obs[0].date.timetuple()), obs[0].value])
-            current_time = obs[0].date + quanta
-    #try:
-    #    latest = objects.filter(date__lte=current_time).latest("date")
-    #    latest_time = 1000 * time.mktime(latest.date.timetuple())
-    #    if len(prepped_data) == 0 or latest_time != prepped_data[len(prepped_data) - 1][0]:
-    #        prepped_data.append([latest_time, latest.value])
-    #except:
-    #    pass
-    return prepped_data
-
 
 def wholesale_extract(objects, quanta, time_start, time_end):
     all_data = list(objects.filter(date__gte=time_start, date__lte=time_end))
@@ -108,17 +120,6 @@ def wholesale_extract(objects, quanta, time_start, time_end):
         prepped_data.append([1000 * time.mktime(data_time.timetuple()), value])
         current_time += quanta
     return prepped_data
-    
-    
-def get_extraction_method_for_interval(interval, quanta):
-    seconds_in_interval = interval.total_seconds()
-    seconds_in_quanta = quanta.total_seconds()
-    approximate_selects = seconds_in_interval / seconds_in_quanta
-    approximate_observations = seconds_in_interval / timedelta(hours=1).total_seconds()
-    if approximate_observations > 100000 * approximate_selects:
-        return pointwise_extract
-    else:
-        return wholesale_extract
 
 def get_abs_seconds_diff(d1, d2):
     if d1 > d2:
@@ -184,11 +185,11 @@ def get_all_stats_series_for_posts(request, group_id, content_types, time_start,
         stats[k] = get_series_for_posts_inner(group_id, k, content_types, time_start, time_end)
     return stats
 
+@time_align_decorator(ts_index=3, te_index=4)
+@memoize(limit=2048)
 def get_series_for_posts_inner(group_id, stat_id, content_types, time_start, time_end):
-    time_start = datetime.fromtimestamp(int(time_start))
-    time_end = datetime.fromtimestamp(int(time_end))
     content_types = [c for c in content_types.split(",") if len(c) > 0 and c in ['no_attachment', 'photo', 'posted_photo', 'video', 'audio', 'doc', 'graffiti', 'link', 'note', 'app', 'poll', 'page']]
-    quanta = choose_quanta(time_end - time_start)
+    quanta = timedelta(days=1)#choose_quanta(time_end - time_start)
     series = []
     posts = Post.objects.filter(group=group_id, last_comment_date__gte=time_start - timedelta(days=7), date__lte=time_end, author_is_group=True)
     if len(content_types) > 0:
@@ -225,13 +226,15 @@ def get_social_activity_for_intraweek_stratas(request, group_id, time_start, tim
 def get_social_activity_for_content_stratas(request, group_id, time_start, time_end):
     return get_social_activity_stratified_template_func(group_id, time_start, time_end, content_type_stratify)
 
-def get_posts_in_period(group_id, time_start, time_end):
-    return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start - timedelta(days=7), author_is_group=True))
-
+@time_align_decorator(ts_index=1, te_index=2)
+@memoize(limit=2048)
 def get_social_activity_stratified_template_func(group_id, time_start, time_end, stratification):
-    posts = get_posts_in_period(group_id, datetime.fromtimestamp(int(time_start)), datetime.fromtimestamp(int(time_end)))
+    posts = get_posts_in_period(group_id, time_start, time_end)
     stratas = stratification(posts)
     return compute_activity_for_stratas(stratas)
+
+def get_posts_in_period(group_id, time_start, time_end):
+    return list(Post.objects.filter(group=group_id, date__lte=time_end, last_comment_date__gte=time_start - timedelta(days=7), author_is_group=True))
 
 def compute_activity_for_stratas(stratas):
     posts_counts = {}
@@ -343,9 +346,11 @@ def get_users_top(request, group_id):
 
 @login_required_json_response
 def get_social_actions_distribution(request, group_id, time_start, time_end, stat_id):
-    time_start = datetime.fromtimestamp(int(time_start))
-    time_end = datetime.fromtimestamp(int(time_end))
-    past = datetime.now()
+    return get_social_actions_distribution_inner(group_id, time_start, time_end, stat_id)
+
+@time_align_decorator(ts_index=1, te_index=2)
+@memoize(limit=2048)
+def get_social_actions_distribution_inner(group_id, time_start, time_end, stat_id):
     active_posts = [p.id for p in list(Post.objects.filter(group=group_id, date__lte=time_end, date__gte=time_start))]
     latest_post_observations = []
     per_request = 200
@@ -394,8 +399,8 @@ def get_social_actions_distribution(request, group_id, time_start, time_end, sta
             next_d1 = d1 + timedelta(hours=1)
             closest_to_d1 = datetime(next_d1.year, next_d1.month, next_d1.day, next_d1.hour)
             if d2 < closest_to_d1:
-                 hours[d1.hour][1] += delta_value
-                 continue
+                hours[d1.hour][1] += delta_value
+                continue
             else:
                 hours[d1.hour][1] += per_second * (closest_to_d1 - d1).total_seconds()
             closest_to_d2 = datetime(d2.year, d2.month, d2.day, d2.hour)

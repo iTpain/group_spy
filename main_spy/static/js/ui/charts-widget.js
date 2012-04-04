@@ -3,7 +3,12 @@ new Module('ui/charts-widget.js', ['jsage/baseui.js', 'jsage/charts/charts-core.
 groupspy.ChartsWidget = new jsage.Class('ChartsWidget', [], {
 	
 	init: function() {
-		this.time_now = Math.round(new Date().getTime() / 1000)
+		var date_now = new Date()
+		date_now.setSeconds(0)
+		date_now.setMinutes(0)
+		date_now.setHours(0)
+		date_now.setMilliseconds(0)
+		this.time_now = Math.round(date_now.getTime() / 1000)
 		this.month_before = this.time_now - 31 * 24 * 3600
 		this.three_months_before = this.time_now - 93 * 24 * 3600
 		this.year_before = this.time_now - 364 * 24 * 3600
