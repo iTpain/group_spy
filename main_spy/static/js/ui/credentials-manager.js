@@ -113,8 +113,11 @@ function add_credentials_command(api_id, viewer_id, sid, secret) {
 					var credentials = elems[0]
 					var users = credentials.get("users")
 					for (var i = 0, l = users.length; i < l; i++) {
-						if (users[i].viewer_id == viewer_id)
+						if (users[i].viewer_id == viewer_id) {
+							users[i].valid = true
+							credentials.set("users", users)
 							return true
+						}
 					}
 					users.push({viewer_id: viewer_id, valid: true})
 					credentials.set("users", users)
