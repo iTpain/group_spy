@@ -1,7 +1,6 @@
 new Module('ui/main-screen.js', ['jsage/eventbus.js', 'ui/operations-counter.js', 'utils/async-operations.js', 'ui/group-comparison.js'], function() {
 
 console.log("Main screen - group spy")
-alert("X")
 $(document).ready(function () {
 var screens_info = {
 	'screen-stat': {
