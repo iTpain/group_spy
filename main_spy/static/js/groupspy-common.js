@@ -9,7 +9,8 @@ var messages_list = [
 	'usertop_frame_activate',
 	'sa_distribution_frame_activate',
 	'group_added',
-	'group_removed'
+	'group_removed',
+	'groups_clashed'
 ]
 
 groupspy.messages = {}

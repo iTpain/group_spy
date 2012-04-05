@@ -47,5 +47,7 @@ groupspy.AjaxOperationsManager = new jsage.Class('AjaxOperationsManager', [jsage
 		this.trigger(groupspy.messages.active_ajax_count_changed, this.operations_count)
 	}
 })
+
+ajax_operations_manager = ajaxOperationsManager = groupspy.AjaxOperationsManager.create()
 	
 })

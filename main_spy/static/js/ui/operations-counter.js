@@ -4,7 +4,7 @@ console.log('Operations counter - group_spy main screen\'s component')
 
 groupspy.OperationsCounter = new jsage.Class('OperationsCounter', [jsage.BaseUIObject, jsage.GlobalMessagingObject], {
 	
-	template: "<div data-tag='main'><div style='width:32px; height:32px; margin-top: -2px;' data-tag='picture'></div><div style='font-size: 16px; margin-top:2px; margin-left:10px;' data-tag='counter'></div></div>",
+	template: "<div data-tag='main' style='padding:5px;'><div style='width:43px; height:11px; margin-top: -2px; display:inline-block;' data-tag='picture'></div><div style='display:inline; font-size: 16px; margin-top:2px; margin-left:10px;' data-tag='counter'></div></div>",
 	
 	init: function(div) {
 		this.elements = this.process_template(this.template)
@@ -12,6 +12,7 @@ groupspy.OperationsCounter = new jsage.Class('OperationsCounter', [jsage.BaseUIO
 		this.elements.main.style.display = 'none'
 		div.appendChild (this.elements['main'])
 		this.subscribe(groupspy.messages.active_ajax_count_changed, this.operations_count_changed)
+		this.elements.counter.innerHTML = "10"
 	},
 	
 	free: function() {

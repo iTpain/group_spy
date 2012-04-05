@@ -12,9 +12,11 @@ urlpatterns = patterns('',
     url(r'credentials/get/$', 'main_spy.crud_views.get_credentials'),
     url(r'credentials/delete/(?P<api_id>[A-Za-z0-9_]+)/(?P<viewer_id>[A-Za-z0-9_]+)/$', 'main_spy.crud_views.delete_credentials'),
     
+    url(r'groups/get/$', 'main_spy.crud_views.get_groups'),
     url(r'group(?P<group_id>\d+)/add/$', 'main_spy.crud_views.add_group'),
     url(r'group(?P<group_id>\d+)/delete/$', 'main_spy.crud_views.delete_group'),   
     url(r'group(?P<group_id>\d+)/update_info/$', 'main_spy.crud_views.update_group_info'),
+    
     url(r'group(?P<group_id>\d+)/snapshot/$', 'main_spy.stat_views.get_group_current_stats'),
     url(r'group(?P<group_id>\d+)/cumulative_post_stats/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_group_cumulative_post_stats'),
     url(r'group(?P<group_id>\d+)/intraday_stratify/(?P<time_start>[0-9]+)/(?P<time_end>[0-9]+)/$', 'main_spy.stat_views.get_social_activity_for_intraday_stratas'),

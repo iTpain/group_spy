@@ -13,7 +13,7 @@ var DemogeoTableWidget = new jsage.Class('DemogeoTableWidget', [], {
 	on_load: function(data) {
 		this.div.innerHTML = ''
 		var table = $("<table style='text-align:center'></table>")[0]
-		table.appendChild($("<tr><td style='width:10%'></td><td style='color:red'>" + find_group_by_id(this.g1).alias + "</td><td style='color:blue'>" + find_group_by_id(this.g2).alias + "</td></tr>")[0])
+		table.appendChild($("<tr><td style='width:10%'></td><td style='color:red'>" + this.g1.alias + "</td><td style='color:blue'>" + this.g2.alias + "</td></tr>")[0])
 		for (var i = 0, l = ages_stratas.length; i < l; i++) {
 			var value1 = ((this.find(data[0], ages_stratas[i]) || 0)).toPrecision(3) + "%"
 			var value2 = ((this.find(data[1], ages_stratas[i]) || 0)).toPrecision(3) + "%"
@@ -33,27 +33,9 @@ var DemogeoTableWidget = new jsage.Class('DemogeoTableWidget', [], {
 	set_groups: function(g1, g2) {
 		this.g1 = g1
 		this.g2 = g2
-		this.loader.load(g1, g2)
+		this.loader.load(this.g1.gid, this.g2.gid)
 	}
 	
-})
-
-var DemogeoChartWidget = new jsage.Class('DemogeoChartWidget', [], {
-	
-	init: function(loader, div) {
-		this.loader = loader
-		this.div = $(div)[0]
-		loader.add_listener('load', this, this.on_load)
-	},
-	
-	on_load: function() {
-		
-	},
-	
-	set_groups: function(g1, g2) {
-		this.loader.load(g1, g2)
-	}
-		
 })
 
 var DemogeoLoader = new jsage.Class('DemogeoLoader', [jsage.EventDispatcher], {
@@ -223,19 +205,15 @@ var DynamicsChartWidget = new jsage.Class('DynamicsChartWidget', [], {
 	set_groups: function(g1, g2) {
 		if (!this.built)
 			this.build()
-		var alias1 = find_group_by_id(g1).alias
-		var alias2 = find_group_by_id(g2).alias
 		for (var i = 0, l = this.series.length; i < l; i++) {
-			this.series[i].data_url = this.url_templates[i].replace('<GROUP_1_ID>', g1).replace('<GROUP_2_ID>', g2)
+			this.series[i].data_url = this.url_templates[i].replace('<GROUP_1_ID>', g1.gid).replace('<GROUP_2_ID>', g2.gid)
 		}
 		var highchart = this.chart.chart
 		for (i = 0, l = this.chart.series_description.length; i < l; i++) {
 			var series_desc = this.chart.series_description[i]
-			highchart.series[series_desc.index].name = (i < l / 2 ? alias1 : alias2) + " " + series_desc.inilabel
+			highchart.series[series_desc.index].name = (i < l / 2 ? g1.alias : g2.alias) + " " + series_desc.inilabel
 		}
-		//highchart.redraw()
 		this.chart.fetch_chart_data()
-		//this.chart.reset_axis_extremes()
 	}
 		
 })
@@ -245,15 +223,14 @@ var ComparisonWidget = new jsage.Class('ComparisonWidget', [], {
 	init: function(window_id) {
 		this.window_id = window_id
 		var demogeo_loader = DemogeoLoader.create()
-		this.widgets = [DynamicsChartWidget.create('#gc-dynamics-chart-container'), DemogeoChartWidget.create(demogeo_loader, '#gc-demogeo-chart'),DemogeoTableWidget.create(demogeo_loader, '#gc-demogeo-table')]
+		this.widgets = [DynamicsChartWidget.create('#gc-dynamics-chart-container'), DemogeoTableWidget.create(demogeo_loader, '#gc-demogeo-table')]
 	},
 	
-	open: function(gid1, gid2) {
-		open_central_frame("screen-group-comparison")
-		$("#gc-alias-1")[0].innerHTML = find_group_by_id(gid1).alias
-		$("#gc-alias-2")[0].innerHTML = find_group_by_id(gid2).alias
+	open: function(g1, g2) {
+		$("#gc-alias-1")[0].innerHTML = g1.alias
+		$("#gc-alias-2")[0].innerHTML = g2.alias
 		for (var i = 0, l = this.widgets.length; i < l; i++)
-			this.widgets[i].set_groups(gid1, gid2)
+			this.widgets[i].set_groups(g1, g2)
 	}
 	
 })
@@ -261,47 +238,20 @@ var ComparisonWidget = new jsage.Class('ComparisonWidget', [], {
 groupspy.GroupComparisonBase = new jsage.Class('GroupComparisonBase', [jsage.GlobalMessagingObject], {
 	
 	init: function() {
-		this.subscribe(groupspy.messages.group_added, this.on_group_added)
-		this.discover_group_divs()
+		this.subscribe(groupspy.messages.groups_clashed, this.on_groups_clashed)
 		this.comparison_widget = ComparisonWidget.create('#central-group-comparison')
+	},
+	
+	on_groups_clashed: function(ev) {
+		this.comparison_widget.open(ev.g1, ev.g2)
 	},
 	
 	discover_group_divs: function() {
 		var divs = $("div.group_header")
 		this.make_draggable(divs)
 		this.make_droppable(divs)
-	},
-	
-	make_draggable: function(elements) {
-		$(elements).draggable({
-			containment: "#groups-list",
-			helper: function(event) {
-				var target = event.currentTarget
-				var div = $("<div class='group_header emphasize'>" + target.childNodes[0].innerHTML + "</div>")[0]
-				div.group_id = target.getAttribute("data-group-id")
-				return div
-			}
-		})
-	},
-	
-	make_droppable: function(elements) {
-		var that = this
-		$(elements).droppable({
-			accept: 'div.group_header',
-			drop: function(e) {
-				var id1 = e.target.getAttribute("data-group-id")
-				var id2 = e.toElement.group_id
-				that.comparison_widget.open(id1, id2)
-			}
-		})
-	},
-	
-	on_group_added: function(el) {
-		this.make_draggable(el.childNodes[0])
-		this.make_droppable(el.childNodes[0])
 	}
-	
-	
+		
 })
 	
 	

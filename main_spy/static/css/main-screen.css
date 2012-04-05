@@ -1,0 +1,90 @@
+#control_div {
+	color:white;
+	background:#000000;
+	position:fixed;
+	top:0px;
+	left:0px;
+	width:200px;
+	height:2000px;
+	box-shadow: 0px 0px 20px #111;
+}
+
+#app-logo {
+	font-size:40px;
+	margin-left:5px;
+}
+
+#app-version {
+	font-size:12px;
+	margin-top:0px;
+	margin-left:123px;
+	margin-bottom:20px;
+}
+
+#add-group-id {
+	font-family:"Segoe UI";
+	font-size:10px;
+	width:55px; 
+	margin-left:5px;
+}
+
+#app-logout {
+	margin-bottom:10px;
+	margin-top:5px;
+}
+
+#app-stats {
+	margin-left:10px;
+	font-size:12px;
+}
+
+#app-bottom-controls {
+	position:absolute;
+	bottom:0px;
+	left:10px;	
+	font-size:14px;
+}
+
+#operations-counter {
+	margin-left:20px;
+	position:fixed;
+	top:10px;
+	right:10px;
+	background:#000;
+	opacity:0.5;
+	color:#ffffff;
+}
+
+div.system-column-subheader {
+	font-size:16px;
+	margin-bottom:3px;
+	font-family:'Segoe UI Bold';
+}
+
+#app-delete-group {
+	display:inline-block;
+	margin-left:365px;
+}
+
+#app-update-group {
+	display:inline-block;
+}
+
+#groups-tiles {
+	width:1000px;
+	position:absolute;
+	left:250px;
+	top:20px;
+}
+
+div.group-tile {
+	width:350px;
+	background:white;
+	border:1px solid #888;
+	position:absolute;
+	box-shadow: 0px 0px 10px #666;
+}
+
+div.inner-group-tile {
+	padding:10px;
+}

@@ -3,11 +3,10 @@
 <head>
 	<title>Group spy</title>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main.css"/>
+	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/main-screen.css"/>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/jquery-ui-1.8.18.custom.css"/>
 	<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}css/demo-table.css"/>
 	<script>
-		var groups_info = [0{% for g in groups %}, {gid: "{{ g.gid }}", agency: "{{ g.agency }}", brand: "{{g.brand}}", alias: "{{g.alias}}" }{% endfor %}]
-		groups_info.shift()
 		if (!window.ASSETS)
 			var ASSETS = {
 				"swf/JSHelper_Saver.swf": "swf/JSHelper_Saver.swf",
@@ -44,11 +43,10 @@
 		</div>
 		<div class="group_info_cell">
 			<span>Бренд:</span>
-			<input id="group_brand_input" type="text" style="width: 420px" />
+			<input id="group_brand_input" type="text" style="width: 435px" />
 		</div>
-		<div class="group_updater_update_button" onclick="update_group_info()">
-			Обновить
-		</div>
+		<div id="app-update-group" class="pointer emphasize">Обновить</div>
+		<div id="app-delete-group" class="pointer emphasize">Удалить</div>
 	</div>
 	<div id="methodology-helper">
 		<h2>Определения</h2>
@@ -75,29 +73,14 @@
 		<p>Двойной клик по тэгу вводит его в режим редактирования, кнопка ОК сохраняет изменения, крест удаляет тэг</p>
 		<p>Чтобы присвоить категорию посту, нужно перетащить ее на пост (драг-н-дроп). Чтобы удалить категорию из поста - двойной клик по тэгу</p>
 	</div>
-	<div class="column" id="group-list-column">
-		<div class="header">
-			Отслеживаемые группы
-		</div>
-		<div class="metro-scroll" id="groups-list">
-			{% for g in groups %}
-			<div class="group" id="group_div_{{ g.gid }}">
-				<div data-group-id="{{ g.gid }}" class="group_header"><span class="group_alias" id="group_alias_{{ g.gid }}" onclick="showGroup({{ g.gid }})">{{ g.alias }}</span><span onclick="deleteGroup({{ g.gid }})" class="group_delete" style="display:none">x</span></div>
-				<div class="group_info"><span id="group_minor_info_{{g.gid}}" onclick="show_dialog('group_info_updater', [{{ g.gid }}])"><span id="group_agency_span_{{g.gid}}">{% if g.agency|length_is:0 %}Агентство не указано{% else %}{{g.agency}}{% endif %}</span> - <span id="group_brand_span_{{g.gid}}">{% if g.brand|length_is:0 %}Бренд не указан{% else %}{{g.brand}}{% endif %}</span></span></div>
-				<div class="group_href"><a target="blank" class="group_href" href="http://vkontakte.ru/club{{ g.gid }}">http://vkontakte.ru/club{{ g.gid }}</a></div>
-			</div>
-			{% endfor %}
-		</div>
-	</div>
 	<div class="column" id="stats-column">
 		<div class="header second-column-header" id="stats-header">
-			<div id="screen-stat-header">Общая статистика<span id='methodology-help' class='helper-span'>[?]</span></div>
+			<div id="screen-stat-header" style="display:none">Общая статистика<span id='methodology-help' class='helper-span'>[?]</span></div>
 			<div id="screen-post-header" style="display:none">Посты группы<span id='posts-help' class='helper-span'>[?]</span></div>
 			<div id="screen-group-comparison-header" style="display:none">Сравнение групп</div>
 			<div id="screen-usertop-header" style="display:none">Топ пользователей</div>
 			<div id="screen-sa_distribution-header" style="display:none">Временное распределение социальных действий</div>
 		</div>
-		<div class="group_asking_to_click second-column-header">Выберите группу из списка слева</div>
 		<div style='width:100%; height:100%; overflow-y:auto'>
 			<div id="central-sa_distribution" style='display:none;'>
 				<div class="chart_container"><div id="sa-intraday-distribution"></div></div>
@@ -127,8 +110,6 @@
 				<div id="group_users_chart" class="chart_container" style="clear: both"></div>
 				<div class="chart_container"><div id="group_activity_chart"></div></div>
 				<div class="chart_container" style="height:540px"><div id="group_social_activity_dynamics"></div></div>
-				<!--<div class="chart_container"><div id="social_activity_hourly_stratified"></div></div>
-				<div class="chart_container"><div id="social_activity_daily_stratified"></div></div>-->
 				<div class="chart_container"><div id="social_activity_content_stratified"></div></div>
 				<div id="demogeo_container">
 					<div id="demogeo_snapshot_header">Демографическая и географическая статистики</div>
@@ -195,50 +176,42 @@
 			</div>
 		</div>
 	</div>
-	<div class="column" id="system-column">
-		<div class="header second-column-header" id="stats-header">Состояние системы</div>
-		<div class="metro-scroll">
+	<div id="control_div">
+		<div id="app-logo">Group Spy</div> 
+		<div id="app-version">0.1.2 alpha</div>
+		<div id="app-active-group"></div>
+		<div id="group-tabs">
+		</div>
+		<div id="app-stats">
 			<div class="system-column-subheader">Общее</div>
-			<div>Пользователей в группах: <span class='system-column-number'>{{ total_users }}</span></div>
-			<div style='margin-top:20px' class="system-column-subheader">Аккаунты</div>
-			<div class='pointer' onclick="$('#credentials-widget').toggle()">Аккаунтов используется:  <span id="credentials-count" class='system-column-number'>загрузка...</span></div>
+			<div>Пользователей: <span class='system-column-number'>{{ total_users }}</span></div>
+			<div style='margin-top:35px' class="system-column-subheader">Аккаунты</div>
+			<div class='pointer' onclick="$('#credentials-widget').toggle()">Аккаунтов используется:  <span id="credentials-count" class='system-column-number'>...</span></div>
 			<div id="credentials-widget" style="display:none">
-				<div><span class="emphasize pointer" id="credentials-add-button">Добавить:</span> <input style="width:80px" id="credentials-input" type="text"/></div>
+				<div><span class="boldy pointer" id="credentials-add-button">Добавить:</span> <input style="width:80px" id="credentials-input" type="text"/></div>
 				<div id="system-credentials-list"></div>
 			</div>
 			<div>Рекомендуется аккаунтов: <span id="rec-credentials-count" class='system-column-number'>{{ rec_credentials_count }}</span></div>
-			<div style='margin-top:20px' class="system-column-subheader">Статистика сканеров</div>
+			<div style='margin-top:35px' class="system-column-subheader">Статистика сканеров</div>
 			{% for t in timetable %}
 				<div title='установленный интервал: {{ t.interval }}'>{{ t.label }}: <span class='system-column-number' {% if t.color %}style='color:red'{% else %}style='color:green'{% endif %}>{{ t.time }}</span></div>
 			{% endfor %}
-			<div style='margin-top:20px' class="system-column-subheader">Статистика базы данных</div>
-			<div>Хранится постов: <span class='system-column-number'>{{ total_posts }}</span></div>
-			<div>Хранится аккаунтов: <span class='system-column-number'>{{ accounts_stored }}</span></div>
-			<div>Хранится соц. действий: <span class='system-column-number'>{{ social_actions_stored }}</span></div>
-			<div style='margin-top:20px' class="system-column-subheader">Версия системы</div>
-			<div>0.1.1 alpha</div>
+			<div style='margin-top:35px' class="system-column-subheader">База данных</div>
+			<div>Постов: <span class='system-column-number'>{{ total_posts }}</span></div>
+			<div>Аккаунтов: <span class='system-column-number'>{{ accounts_stored }}</span></div>
+			<div>Соц. действий: <span class='system-column-number'>{{ social_actions_stored }}</span></div>
 		</div>
-	</div>
-	<div id="control_div">
-		<div class="group" id="addgroup_div">
-			<span class="emphasize pointer" onclick="addGroup()">Добавить</span> группу <input id="added_group_id" type="text" style="width: 70px; margin-left:10px;"> 
-		</div>
-		<div id="screen-select-div" class="group">
-			<span>Вывести:</span>
-			<select style="margin-left:15px;" id="screen-select">
-				<option value="screen-stat">дашбоард</option>
-				<option value="screen-post">посты</option>
-				<option value="screen-usertop">топ пользователей</option>
-				<option value="screen-sa_distribution">распределение соц. действий</option>
-			</select>
-		</div>
-		<div id="auth-div" class="group">
-			<div style="display:inline">
-				<span class="emphasize pointer" onclick="window.location = '../accounts/logout/'">Выйти</span> из аккаунта <span class="emphasize pointer" id="auth-logout">{{ username }}</span>
+		<div id="app-bottom-controls">
+			<div class="group" id="add-group-div">
+				<span class="pointer">Добавить</span> <span class="boring">группу</span><input id="add-group-id" type="text"> 
 			</div>
-			<div id="operations-counter" class="group"></div>
+			<div id="app-logout" class="group">
+				<span class="pointer" onclick="window.location = '../accounts/logout/'">Выйти</span> <span class="boring">из аккаунта</span> <span class="pointer" id="auth-logout">{{ username }}</span>
+			</div>			
 		</div>
 	</div>
 </div>
+<div id="groups-tiles"></div>
+<div id="operations-counter"></div>
 </body>
 </html>

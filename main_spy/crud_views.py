@@ -4,6 +4,11 @@ from group_spy import settings
 from group_spy.utils.vk import VKCredentialsCollection, VKCredentials
 
 @login_required_json_response
+def get_groups(request):
+    groups = list(Group.objects.all())
+    return [{'gid': g.gid, 'brand': g.brand, 'agency': g.agency, 'alias': g.alias} for g in groups]
+
+@login_required_json_response
 @request_vk_credentials
 def add_group(request, group_id, crawler):
     try:
