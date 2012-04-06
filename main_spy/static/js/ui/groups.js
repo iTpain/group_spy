@@ -77,18 +77,18 @@ var dragging_id = null
 var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView, jsage.GlobalMessagerObject], {
 	
 	template: "<div class='group-tile' data-tag='container'><div class='inner-group-tile'>" +
-			  	"<div class='group-tile-header' data-tag='alias'></div><div class='group-tile-attr' data-tag='brand'></div><div class='group-tile-attr' data-tag='agency'></div>" +
+			  	"<div class='group-tile-header' data-tag='alias'></div><div class='group-tile-attr' data-tag='href'></div><div class='group-tile-attr' data-tag='brand'></div><div class='group-tile-attr' data-tag='agency'></div>" +
 			  	"<div data-tag='sparklines'>" +
 			  	"<div style='margin-top:10px' data-tag='empty'>Нет данных для этой группы</div>" +
 			  	"<div data-tag='full' style='display:none' class='group-tile-sparkline'>" +
 			  	"<table><tr><td>" +
-			  	"<div>участники</div><table><tr><td><div data-tag='total_users_series'></div></td><td><div data-tag='total_users_series_v'></div><div data-tag='total_users_series_d'></div></td></tr></table>" +
+			  	"<div>участники</div><table><tr><td><div data-tag='total_users_series'></div></td><td style='text-align:right'><div data-tag='total_users_series_v'></div><div data-tag='total_users_series_d'></div></td></tr></table>" +
 			  	"</td><td class='group-tile-sparklines-second-column'>" +
-			  	"<div>забаненные</div><table><tr><td><div data-tag='banned_users_series'></div></td><td><div data-tag='banned_users_series_v'></div><div data-tag='banned_users_series_d'></div></td></tr></table>" +
+			  	"<div>забаненные</div><table><tr><td><div data-tag='banned_users_series'></div></td><td style='text-align:right'><div data-tag='banned_users_series_v'></div><div data-tag='banned_users_series_d'></div></td></tr></table>" +
 			  	"</td><tr><td>" +
-			  	"<div>активные</div><table><tr><td><div data-tag='active_users_series'></div></td><td><div data-tag='active_users_series_v'></div><div data-tag='active_users_series_d'></div></td></tr></table>" +
+			  	"<div>активные</div><table><tr><td><div data-tag='active_users_series'></div></td><td style='text-align:right'><div data-tag='active_users_series_v'></div><div data-tag='active_users_series_d'></div></td></tr></table>" +
 			  	"</td><td class='group-tile-sparklines-second-column'>" + 
-			  	"<div>соц. действия</div><table><tr><td><div data-tag='sa_series'></div></td><td><div data-tag='sa_series_v'></div><div data-tag='sa_series_d'></div></td></tr></table>" +
+			  	"<div>соц. действия</div><table><tr><td><div data-tag='sa_series'></div></td><td style='text-align:right'><div data-tag='sa_series_v'></div><div data-tag='sa_series_d'></div></td></tr></table>" +
 			  	"</td></tr></table>" +
 			  	"</div></div></div>",
 			  	
@@ -144,10 +144,11 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 	on_data_update: function(provider) {
 		var data = provider.present()
 		this.elements.alias.innerHTML = data.alias
-		this.elements.brand.innerHTML = data.brand
-		$(this.elements.brand).css("display", data.brand.length > 0 ? "inline-block" : "none")
-		this.elements.agency.innerHTML = data.agency
-		$(this.elements.agency).css("display", data.agency.length > 0 ? "inline-block" : "none")
+		this.elements.href.innerHTML = "<a style='text-decoration:none; color:#0099ff' href='http://vk.com/club" + data.gid + "' target='_blank'>http://vk.com/club" + data.gid + "</a>"
+		//this.elements.brand.innerHTML = data.brand
+		//$(this.elements.brand).css("display", data.brand.length > 0 ? "inline-block" : "none")
+		//this.elements.agency.innerHTML = data.agency
+		//$(this.elements.agency).css("display", data.agency.length > 0 ? "inline-block" : "none")
 		this.gid = data.gid
 		var sparkline_data_here = "sparklines" in data
 		$(this.elements.empty).css("display", sparkline_data_here ? "none" : "block")
@@ -165,6 +166,7 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 			sparkline.set_graph_color(percentage * sparkline.reverse_direction >= 0 ? "#008800" : "#ff0000")
 			sparkline.set_series(data.series)
 			this.elements[key + "_v"].innerHTML = (percentage < 0 ? "" : "+") + (percentage * 100).toPrecision(3) +"%"
+			this.elements[key + "_d"].innerHTML = data.last[1].toString()
 		}
 	},
 	
