@@ -102,7 +102,7 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 		this.dblclick_handler = function() { that.on_dblclick() }
 		this.click_handler = function() { that.on_click() }
 		$(this.root).bind('dblclick', this.dblclick_handler)
-		$(this.root).bind('click', this.click_handler)
+		$(this.elements.alias).bind('click', this.click_handler)
 		this.make_draggable(this.root)
 		this.make_droppable(this.root)
 		this.create_sparklines()
@@ -184,7 +184,7 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 	
 	free: function() {
 		$(this.root).unbind('dblclick', this.dblclick_handler)
-		$(this.root).unbind('click', this.click_handler)
+		$(this.elements.alias).unbind('click', this.click_handler)
 		this.free_BaseView()
 	}
 	
