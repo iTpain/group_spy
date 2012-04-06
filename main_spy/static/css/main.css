@@ -13,7 +13,6 @@ body {
 	padding: 0px;
 	min-width:1800px;
 	overflow-x:auto;
-	overflow-y:hidden;
 	font-family:"Segoe UI";
 	background:#c1c1c1;
 }
@@ -24,6 +23,14 @@ body {
 
 .boring {
 	color:#888;
+}
+
+.lightblue {
+	color:#0099ff
+}
+
+.white {
+	color:#fff !important;
 }
 
 .blue {
@@ -224,7 +231,6 @@ span.snapshot-cell-value {
 
 #demogeo_snapshot_header {
 	font-size: 20px;
-	margin-left:10px;
 	margin-bottom: 15px;
 	margin-top:5px;
 	color:#0066ff

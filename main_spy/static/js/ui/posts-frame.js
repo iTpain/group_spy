@@ -334,7 +334,7 @@ $("#filter-box input").bind("change", function(e) {
 function adjust_height () {
 	var h = $(window).height()
 	var tags_h = $("#tag-set").height()
-	$("#posts-list").css({'height': Math.max(0, h - tags_h - 275) + "px"})
+	$("#posts-list").css({'height': Math.max(0, h - tags_h - 232) + "px"})
 }
 $(window).resize(adjust_height)
 adjust_height()

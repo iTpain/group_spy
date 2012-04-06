@@ -17,7 +17,7 @@
 #app-version {
 	font-size:12px;
 	margin-top:0px;
-	margin-left:123px;
+	margin-left:8px;
 	margin-bottom:20px;
 }
 
@@ -73,18 +73,101 @@ div.system-column-subheader {
 #groups-tiles {
 	width:1000px;
 	position:absolute;
-	left:250px;
+	left:230px;
 	top:20px;
 }
 
 div.group-tile {
 	width:350px;
-	background:white;
+	background:black;
 	border:1px solid #888;
 	position:absolute;
+	color:white;
 	box-shadow: 0px 0px 10px #666;
+}
+
+div.group-tile table {
+	border-spacing:0px;
+}
+
+div.group-tile-sparkline {
+	font-size:12px;
+	margin-top:10px;
+}
+
+div.group-tile-sparkline > div{
+	margin-top:9px;
+	margin-bottom:1px;
+}
+
+div.group-tile-header {
+	cursor:pointer;
+	font-family: 'Segoe UI Bold';
+	font-size:20px;
+}
+
+div.group-tile-attr {
+	display:inline-block;
+	color:#0099ff;
+	font-size:12px;
+	margin-right:12px;
+	font-family: 'Segoe UI Bold';
+	cursor:pointer;
+}
+
+td.group-tile-sparklines-second-column {
+	padding-left:15px;
 }
 
 div.inner-group-tile {
 	padding:10px;
+}
+
+div.app-tab {
+	cursor:pointer;
+	font-size:16px;
+	font-family:'Segoe UI Bold';
+	margin-top:20px;
+	margin-bottom:15px;
+	margin-left:8px;
+	margin-right:5px;
+	color:#888;
+}
+
+#chosen-group-label {
+	font-size:20px;
+	font-family:'Segoe UI';
+	color:#0099ff;
+	margin-left:8px;
+	margin-right:10px;
+}
+
+div.app-tab:hover {
+	color:#fff;
+}
+
+#app-content {
+	margin-left:250px;
+	margin-top:20px;
+	width:800px;
+}
+
+#groups-box {
+	background:black;
+	box-shadow: 0px 0px 20px #111;
+	max-width:600px;
+	padding:20px;
+	position:absolute;
+	color:#fff;
+	left:200px;
+	top:80px;
+}
+
+#groups-box div {
+	display:inline-block;
+	margin-right:30px;
+	margin-top:10px;
+	margin-bottom:10px;
+	font-size:14px;
+	cursor:pointer;
 }
