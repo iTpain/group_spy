@@ -62,8 +62,8 @@ var GroupBoxCell = new jsage.Class('GroupBoxCell', [jsage.BaseUIObject, jsage.Ba
 	},
 	
 	on_click: function() {
-		$("#groups-box").toggle()
-		this.trigger(groupspy.messages.group_entered, this.data_providers["default"].present())
+		$("#groups-box").css("display", "none")
+		this.trigger(groupspy.messages.group_entered, {group: this.data_providers["default"].present()})
 	},
 	
 	free: function() {
@@ -165,7 +165,8 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 			var percentage = (data.last[1] - data.first[1]) / data.first[1]
 			sparkline.set_graph_color(percentage * sparkline.reverse_direction >= 0 ? "#008800" : "#ff0000")
 			sparkline.set_series(data.series)
-			this.elements[key + "_v"].innerHTML = (percentage < 0 ? "" : "+") + (percentage * 100).toPrecision(3) +"%"
+			if (!isNaN(percentage))
+				this.elements[key + "_v"].innerHTML = (percentage < 0 ? "" : "+") + (percentage * 100).toPrecision(3) +"%"
 			this.elements[key + "_d"].innerHTML = data.last[1].toString()
 		}
 	},
@@ -179,7 +180,7 @@ var GroupCell = new jsage.Class('GroupCell', [jsage.BaseUIObject, jsage.BaseView
 	},
 	
 	on_click: function() {
-		this.trigger(groupspy.messages.group_entered, this.data_providers["default"].present())
+		this.trigger(groupspy.messages.group_entered, {group: this.data_providers["default"].present()})
 	},
 	
 	free: function() {
@@ -277,12 +278,16 @@ var month_ago = time_now - 31 * 24 * 3600
 
 var make_series_dict = function(series) {
 	var sparkline_series = []
-	for (var i = 0, l = series.length; i < l; i++)
+	var first_not_null = 0
+	for (var i = 0, l = series.length; i < l; i++) {
 		sparkline_series[i] = series[i][1]
+		if (first_not_null == 0 && sparkline_series[i] > 0)
+			first_not_null = series[i]
+	}
 	var dict = {series: sparkline_series}
 	if (series.length >= 2) {
 		dict.last = series[series.length - 1]
-		dict.first = series[0]
+		dict.first = first_not_null
 	}
 	return dict
 }
@@ -338,6 +343,7 @@ $.ajax({
 				success: on_success_sa				
 			})
 		}
+		jsage.global_bus.trigger(groupspy.messages.groups_received, group_set)
 	}
 })
 

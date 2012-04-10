@@ -11,8 +11,7 @@
 body {
 	margin: 0px;
 	padding: 0px;
-	min-width:1800px;
-	overflow-x:auto;
+	overflow-x:hidden;
 	font-family:"Segoe UI";
 	background:#c1c1c1;
 }

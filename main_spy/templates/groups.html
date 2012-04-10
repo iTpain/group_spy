@@ -36,7 +36,6 @@
 	<script src="{{ STATIC_URL }}js/ui/credentials-manager.js"></script>
 </head>
 <body>
-<div>
 	<div id="group_info_updater">
 		<div class="group_updater_header">Группа <span id="group_updater_header"></span></div>
 		<input type="hidden" id="group_id_hidden_input" />
@@ -77,23 +76,17 @@
 		<p>Чтобы присвоить категорию посту, нужно перетащить ее на пост (драг-н-дроп). Чтобы удалить категорию из поста - двойной клик по тэгу</p>
 	</div>
 	<div id="app-content" style="display:none">
-		<div class="header second-column-header" id="stats-header">
-			<div id="group-header" style="display:none">Общая статистика<span id='methodology-help' class='helper-span'>[?]</span></div>
-			<div id="posts-header" style="display:none">Посты группы<span id='posts-help' class='helper-span'>[?]</span></div>
-			<div id="usertop-header" style="display:none">Топ пользователей</div>
-			<div id="posts_results-header" style="display:none">Результативность постов</div>
-			<div id="demographics-header" style="display:none">Демография</div>
-			<div id="user_activity-header" style="display:none">Активность пользователей</div>
-			<div id="sa_distribution-header" style="display:none">Временное распределение социальных действий</div>
-		</div>
 		<div id="central-user_activity" style="display:none">
+			<div class="header">Активность пользователей</div>
 			<div class="chart_container"><div id="group_activity_chart"></div></div>
 			<div class="chart_container" style="height:540px"><div id="group_social_activity_dynamics"></div></div>			
 		</div>
 		<div id="central-posts_results" style="display:none">
+			<div class="header">Результативность постов</div>
 			<div class="chart_container"><div id="social_activity_content_stratified"></div></div>
 		</div>
 		<div id="central-demographics" style="display:none">
+			<div class="header">Демография</div>
 			<div id="demogeo_container">
 				<div id="demogeo_snapshot_header">Демографическая и географическая статистики</div>
 				<div id="demogeo_switcher"></div>
@@ -126,12 +119,14 @@
 			</div>			
 		</div>
 		<div id="central-sa_distribution" style='display:none;'>
+			<div class="header">Временное распределение социальных действий</div>
 			<div class="chart_container"><div id="sa-intraday-distribution"></div></div>
 			<div class="chart_container"><div id="sa-intraday-result"></div></div>
 			<div class="chart_container"><div id="sa-intraweek-distribution"></div></div>
 			<div class="chart_container"><div id="sa-intraweek-result"></div></div>				
 		</div>
 		<div id="central-group" style='display:none;'>
+			<div class="header">Общая статистика<span id='methodology-help' class='helper-span'>[?]</span></div>
 			<div id="group_stats_snapshot_header">Значения основных показателей сейчас</div>
 			<div id="group_stats_snapshot"></div>
 			<div id="group_cumulative_posts">
@@ -153,9 +148,11 @@
 			<div id="group_users_chart" class="chart_container" style="clear: both"></div>
 		</div>
 		<div id="central-usertop" style='display:none'>
+			<div class="header">Топ пользователей</div>
 			<div id="usertop-table"></div>
 		</div>
 		<div id="central-posts" style='display:none;'>
+			<div class="header">Посты группы<span id='posts-help' class='helper-span'>[?]</span></div>
 			<div class="big-header">Категории текстов</div>
 			<div id="tag-set"></div>
 			<div class='text-category-adder'><span class="text-category-adder" onclick="add_text_category()">Добавить</span> новую: <input type="text" id="text-category-input"></div>
@@ -189,7 +186,6 @@
 	<div id="control_div">
 		<div id="app-logo">Group Spy</div> 
 		<div id="app-version">0.1.2 alpha</div>
-		<div id="app-active-group"></div>
 		<div id="group-tabs" style="display:none">
 			<div id="chosen-group-label" class="pointer"></div>
 			<div class="app-tab white" data-navigate="group">Общая информация</div>
@@ -229,9 +225,8 @@
 			</div>			
 		</div>
 	</div>
-</div>
-<div id="groups-tiles"></div>
-<div id="groups-box" style='display:none'></div>
-<div id="operations-counter"></div>
+	<div id="groups-tiles"></div>
+	<div id="groups-box" style='display:none'></div>
+	<div id="operations-counter"></div>
 </body>
 </html>

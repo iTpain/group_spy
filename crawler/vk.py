@@ -7,12 +7,6 @@ class FailedRequestError(Exception):
 
 class GenericLoadJob(Thread):
     
-    _req_dict = None
-    _credentials = None
-    response = None
-    has_run = False
-    error = None
-    
     def __init__(self, req_dict, credentials):
         self._req_dict = req_dict
         self._credentials = credentials
@@ -25,6 +19,7 @@ class GenericLoadJob(Thread):
     def do_job(self):
         try:
             self.response = self._credentials.blocking_request(self._req_dict)
+            self.error = None
         except Exception as e:
             self.response = None
             self.error = e
@@ -92,6 +87,7 @@ class VKCrawler(object):
         max_likes = 1000
         max_comments = 100
         total_result = {}
+        task_specific_failed_creds = []
         for p in posts:
             if p['id'] in total_result:
                 continue
@@ -107,7 +103,7 @@ class VKCrawler(object):
         completed = 0
         while completed < len(tasks):
             #print str(completed) + "/" + str(len(tasks))
-            credentials = self._credentials_list.get_credentials()
+            credentials = self._credentials_list.get_credentials(task_specific_failed_creds)
             if len(credentials) == 0:
                 raise FailedRequestError()
             jobs = []
@@ -116,7 +112,7 @@ class VKCrawler(object):
                     break
                 jobs.append((tasks[completed + i], credentials[i]))
             result = self.get_jobs_done(jobs)
-            if self.check_responses(result):
+            if self.check_responses(result, task_specific_failed_creds):
                 for r in result:
                     req_data = r[2]
                     if req_data['method'] == 'likes.getList':
@@ -134,24 +130,23 @@ class VKCrawler(object):
             j.start()
         for j in jobs:
             j.join()
-        return [(j.response, j.error, j._req_dict) for j in jobs]
+        return [(j.response, j.error, j._req_dict, j._credentials) for j in jobs]
     
-    def check_responses(self, responses):
+    def check_responses(self, responses, error_creds):
         good_responses = [r for r in responses if r[0] != None]
-        bad_credentials = [r for r in responses if isinstance(r[1], InvalidCredentialsError)]
         if len(good_responses) == len(responses):
             return True
         else:
-            if len(good_responses) == 0 and len(bad_credentials) == 0:
-                raise FailedRequestError()
+            error_creds.extend([r[3] for r in responses if r[0] == None and not isinstance(r[1], InvalidCredentialsError)])
             return False
     
     def set_generator(self, params, key, ids):
         loaded = 0
+        task_specific_failed_creds = []
         while True:
             if loaded >= len(ids):
                 break
-            credentials = self._credentials_list.get_credentials()
+            credentials = self._credentials_list.get_credentials(task_specific_failed_creds)
             if len(credentials) == 0:
                 raise FailedRequestError()
             workers_count = len(credentials)
@@ -164,7 +159,7 @@ class VKCrawler(object):
                     req_dict[p] = params[p]
                 job_input.append((req_dict, credentials[i]))
             result = self.get_jobs_done(job_input)
-            if self.check_responses(result):
+            if self.check_responses(result, task_specific_failed_creds):
                 loaded += workers_count * self._profiles_count_per_load
                 for r in result:
                     for data_piece in r[0]:
@@ -176,9 +171,10 @@ class VKCrawler(object):
         offset = initial_offset
         if count == 0:
             count = self._count_per_load
+        task_specific_failed_creds = []
         while True:
             prev_offset = offset
-            credentials = self._credentials_list.get_credentials()
+            credentials = self._credentials_list.get_credentials(task_specific_failed_creds)
             job_input = []
             if len(credentials) == 0:
                 raise FailedRequestError()
@@ -189,7 +185,7 @@ class VKCrawler(object):
                     req_dict[p] = request_params[p]
                 job_input.append((req_dict, c))
             result = self.get_jobs_done(job_input)
-            if self.check_responses(result):
+            if self.check_responses(result, task_specific_failed_creds):
                 responses = [fetch_array_func(r[0]) for r in result]
                 finished_flag = False
                 for r in responses:

@@ -14,7 +14,9 @@ var messages_list = [
 	'group_added',
 	'group_removed',
 	'groups_clashed',
-	'group_entered'
+	'group_entered',
+	'main_screen_entered',
+	'groups_received'
 ]
 
 groupspy.messages = {}

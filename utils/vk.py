@@ -71,8 +71,11 @@ class VKCredentialsCollection(object):
 		json.dump([c.as_dictionary() for c in all_credentials], f)
 		f.close()
 	
-	def get_credentials(self):
-		return [c for c in self._collection if c.is_valid()]
+	def get_credentials(self, exclude_creds=None):
+		if exclude_creds:
+			return [c for c in self._collection if c.is_valid() and not c in exclude_creds]
+		else:
+			return [c for c in self._collection if c.is_valid()]
 	
 	def get_all_credentials(self):
 		return list(self._collection)

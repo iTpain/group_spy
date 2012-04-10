@@ -52,6 +52,9 @@ var CredentialsCell = new jsage.Class('CredentialsCell', [jsage.BaseView, jsage.
 var credentials_list = jsage.BaseList.create($("#system-credentials-list")[0], CredentialsCell, $("<div>Список аккаунтов пуст</div>")[0])
 var credentials_set = jsage.EntitySet.create('credentials')
 var credentials_collection = jsage.ArrayCollection.create(credentials_set)
+credentials_collection.add_listener(jsage.mvc.events.data_update, window, function () {
+	check_recommended_accounts_quantity()
+})
 credentials_list.bind_provider("default", credentials_collection)
 var credentials_counter = 0
 
@@ -71,8 +74,6 @@ $.ajax({
 			var credentials = credentials_set.create_entity(credentials_counter++, {api_id: p, users: dict[p]})
 			credentials_collection.add(credentials)
 		}
-		check_recommended_accounts_quantity()
-		
 	}
 })
 
@@ -91,8 +92,7 @@ function remove_credentials_command(api_id, viewer_id) {
 			if (elem_users.length == 0)
 				credentials_set.remove_elements([elem])
 			else
-				elem.set("users", elem_users)		
-			check_recommended_accounts_quantity()
+				elem.set("users", elem_users)
 			return true
 		}
 	)
