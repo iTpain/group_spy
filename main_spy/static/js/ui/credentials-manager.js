@@ -112,15 +112,18 @@ function add_credentials_command(api_id, viewer_id, sid, secret) {
 				} else {
 					var credentials = elems[0]
 					var users = credentials.get("users")
+					var found_user = false
 					for (var i = 0, l = users.length; i < l; i++) {
 						if (users[i].viewer_id == viewer_id) {
 							users[i].valid = true
-							credentials.set("users", users)
-							return true
+							found_user = true
+							break
 						}
 					}
-					users.push({viewer_id: viewer_id, valid: true})
+					if (!found_user)
+						users.push({viewer_id: viewer_id, valid: true})
 					credentials.set("users", users)
+					check_recommended_accounts_quantity()
 				}
 				return true
 			}
