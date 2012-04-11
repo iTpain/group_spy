@@ -34,8 +34,6 @@ class GroupScanner(object):
         groups = Group.objects.all ()
         self.gather_groups_info(crawler, [g.gid for g in groups])
         for g in groups:
-            if g.gid != "29887826":
-                continue
             try:
                 print "Scanning group " + g.gid
                 now = datetime.now()
