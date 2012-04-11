@@ -1,12 +1,12 @@
-from group_spy.main_spy.models import GroupObservation, Group, Post, DemogeoGroupObservation, LatestPostObservation
-from time import gmtime, strftime
-from group_spy.logger.error import LogError
+from group_spy.main_spy.models import GroupObservation, Group, Post, LatestDemogeoObservation, LatestPostObservation
 from datetime import datetime, timedelta
 from django.db.models import Sum
 from django.db import DatabaseError
 from group_spy.crawler.vk import FailedRequestError
 from group_spy.utils.misc import get_earliest_post_time
 import json, time
+
+AGE_STRATAS = [[0, 18], [19, 21], [22, 24], [25, 27], [28, 30], [31, 35], [36, 45], [46, 100]]
 
 def compute_group_activity(active_posts):
     stats = {"likes": 0, "comments": 0, "reposts": 0}
@@ -34,6 +34,8 @@ class GroupScanner(object):
         groups = Group.objects.all ()
         self.gather_groups_info(crawler, [g.gid for g in groups])
         for g in groups:
+            if g.gid != "29887826":
+                continue
             try:
                 print "Scanning group " + g.gid
                 now = datetime.now()
@@ -75,7 +77,7 @@ class GroupScanner(object):
                 result['users_3'] += 1
             result['users_1'] += 1
         try:
-            self.analyze_demogeo(gid, [profile for profile in crawler.get_profiles([uid for uid in uids.keys()])], False, crawler)
+            self.analyze_demogeo(gid, [profile for profile in crawler.get_profiles([uid for uid in uids.keys()])], 'active', crawler)
         except (FailedRequestError, DatabaseError) as e:
             print "failed to analyze demogeo for active auditory of group " + str(gid) + ": " + str(e)
         return result
@@ -95,15 +97,20 @@ class GroupScanner(object):
                 faceless_users += 1
             total_users += 1
         try:
-            self.analyze_demogeo(gid, profiles, True, crawler)
+            self.analyze_demogeo(gid, profiles, 'entire', crawler)
         except (FailedRequestError, DatabaseError) as e:
             print "failed to analyze demogeo of group " + str(gid) + ": " + str(e)
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
     
-    def analyze_demogeo(self, gid, profiles, whole_group, crawler):
+    def analyze_demogeo(self, gid, profiles, source_id, crawler):
         demo_json = self.analyze_demo(profiles, crawler)
         geo_json = self.analyze_geo(profiles, crawler)
-        observation = DemogeoGroupObservation(group_id=gid, json=json.dumps({'demo': demo_json, 'geo': geo_json}), whole_group=whole_group)
+        result = {'demo': demo_json, 'geo': geo_json}
+        try:
+            observation = LatestDemogeoObservation.objects.get(group=gid, source=source_id)
+        except LatestDemogeoObservation.DoesNotExist:
+            observation = LatestDemogeoObservation(group_id=gid, source=source_id)
+        observation.json = json.dumps(result)
         observation.save()
     
     def get_optimal_cities_set(self, cities, min_threshold, max_threshold, step, crit_value):
@@ -156,8 +163,7 @@ class GroupScanner(object):
         now = datetime.now().year
         age = now - year
         profile['computed_age'] = age
-        age_stratas = [[0, 11], [12, 15], [16, 18], [19, 21], [22, 24], [25, 27], [28, 30], [31, 35], [36, 45], [46, 120]]
-        for a in age_stratas:
+        for a in AGE_STRATAS:
             if age >= a[0] and age <= a[1]:
                 return str(a[0]) + '-' + str(a[1])
         return 'undefined'
@@ -176,14 +182,18 @@ class GroupScanner(object):
     
     def analyze_demo(self, profiles, crawler):
         stratas = {}
+        agesex_only_stratas = {str(strata[0]) + '-' + str(strata[1]) + ":" + gender: 0 for strata in AGE_STRATAS for gender in ('man', 'woman')}
         for p in profiles:
             age = self.get_age_strata(p)
             sex = self.get_sex_strata(p)
+            if age != 'undefined':
+                agesex_only_stratas[age + ":" + sex] += 1
             education = self.get_education_strata(p)
             final_strata = age + ":" + sex + ":" + education
             if not final_strata in stratas:
                 stratas[final_strata] = 0
             stratas[final_strata] += 1
+        print agesex_only_stratas
         return stratas        
         
     def write_observations(self, group, result):

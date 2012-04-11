@@ -26,7 +26,14 @@ print datetime.now() - past
 exit()
 """
 
+"""from main_spy.models import LatestDemogeoObservation
+x = list(LatestDemogeoObservation.objects.all())
+for y in x:
+    print y
+    print y.group_id
+    print y.json
+exit()"""
 
-#launch([UserScanner, PostsScanner, GroupScanner], [settings.USER_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
-launch([PostsScanner], [settings.POSTS_SCAN_INTERVAL])
+launch([UserScanner, PostsScanner, GroupScanner], [settings.USER_SCAN_INTERVAL, settings.POSTS_SCAN_INTERVAL, settings.GROUPS_SCAN_INTERVAL])
+#launch([PostsScanner], [settings.POSTS_SCAN_INTERVAL])
 #launch([GroupScanner], [settings.GROUPS_SCAN_INTERVAL])
