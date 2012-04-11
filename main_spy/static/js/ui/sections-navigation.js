@@ -56,7 +56,7 @@ var states = {
 		},
 		
 		hash_acceptable: function(h) {
-			return (h == "" || h == "#") ? {} : false
+			return (h == "" || h == "#") ? [] : false
 		}
 	},
 	
@@ -99,6 +99,8 @@ var states = {
 			var result = re.exec(h)
 			if (result)
 				return [find_by_gid(result[1]).present(), tabs[result[2]]]
+			else
+				return false
 		}
 		
 	},
@@ -122,9 +124,10 @@ var states = {
 		hash_acceptable: function(h) {
 			var re = /#compare(\d+),(\d+)/
 			var result = re.exec(h)
-			if (result) {
+			if (result)
 				return [find_by_gid(result[1]).present(), find_by_gid(result[2]).present()]		
-			}	
+			else
+				return false	
 		}
 		
 	}
