@@ -1,6 +1,7 @@
-from group_spy.main_spy.models import GroupObservation, Post, PostAttachment, LatestPostObservation, DemogeoGroupObservation, UserSocialAction, PostObservation
+from group_spy.main_spy.models import GroupObservation, Post, PostAttachment, LatestPostObservation, LatestDemogeoObservation, UserSocialAction, PostObservation, DemoObservation
 from group_spy.main_spy.group_scan import compute_group_activity
 from group_spy.main_spy.views_utils import login_required_json_response
+from group_spy.main_spy.group_scan import AGE_STRATAS
 from datetime import datetime, timedelta
 from django.db.models import Sum, Count
 from math import ceil
@@ -90,7 +91,11 @@ def choose_max_absolute_error(interval):
         return timedelta(hours=1)
 
 def wholesale_extract(objects, quanta, time_start, time_end):
+    print objects
+    print time_start
+    print time_end
     all_data = list(objects.filter(date__gte=time_start, date__lte=time_end))
+    print all_data
     try:
         start_data = objects.filter(date__lte=time_start).latest("date")
         start_value = start_data.value
@@ -281,22 +286,33 @@ def content_type_stratify(posts):
 #    
 
 @login_required_json_response
-def get_demogeo_snapshot(request, group_id, time):
-    time = datetime.fromtimestamp(int(time))
-    return {'whole_group': get_demogeo(group_id, time, True), 'active_users': get_demogeo(group_id, time, False)}
+def get_demogeo_snapshot(request, group_id):
+    entire = LatestDemogeoObservation.objects.get(group=group_id, source="entire")
+    active = LatestDemogeoObservation.objects.get(group=group_id, source="active")
+    return {'entire': json.loads(entire.json), 'active': json.loads(active.json)}
 
-def get_demogeo(group_id, time, whole_group):
-    try:
-        value = DemogeoGroupObservation.objects.filter(group=group_id, whole_group=whole_group, date__lte=time).latest("date").json
-        return json.loads(value)
-    except DemogeoGroupObservation.DoesNotExist:
-        try:
-            value = DemogeoGroupObservation.objects.filter(group=group_id, whole_group=whole_group, date__gte=time)[0].json
-            return json.loads(value)
-        except DemogeoGroupObservation.DoesNotExist:
-            return None
-        
-        
+#
+#    Get demographics series
+#
+       
+@login_required_json_response
+def get_demographics_series(request, group_id, time_start, time_end):
+    sources = ['entire', 'active']
+    return {source: get_demographics_series_by_source(group_id, source, time_start, time_end) for source in sources}
+
+@time_align_decorator(ts_index=2, te_index=3)
+@memoize(limit=2048)       
+def get_demographics_series_by_source(group_id, source, time_start, time_end):
+    genders = {"man": True, "woman": False}
+    response = {}
+    time_start = time_end - timedelta(days=2)
+    for gender_label, is_man in genders.iteritems():
+        response[gender_label] = {age[1]: age_gender_series(group_id, source, age[1], is_man, time_start, time_end) for age in AGE_STRATAS}
+    return response
+
+def age_gender_series(group_id, source, age, is_man, time_start, time_end):
+    return wholesale_extract(DemoObservation.objects.filter(group=group_id, source=source, is_man=True, age_group=age), timedelta(days=1), time_start, time_end)
+
 #
 #    Cumulative statistics over period for posts count etc
 #
@@ -324,8 +340,8 @@ def get_group_cumulative_post_stats(request, group_id, time_start, time_end):
 
 @login_required_json_response
 def get_users_top(request, group_id):
-    comments = UserSocialAction.objects.filter(type="comment", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(comments=Count('user'))
-    likes = UserSocialAction.objects.filter(type="like", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(likes=Count('user'))
+    comments = UserSocialAction.objects.filter(type="comment", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(comments=Count('user'))[0:200]
+    likes = UserSocialAction.objects.filter(type="like", post__group=group_id).values('user', 'user__first_name', 'user__last_name', 'user__snid').annotate(likes=Count('user'))[0:200]
     users = {}
     for c in comments:
         c['likes'] = 0

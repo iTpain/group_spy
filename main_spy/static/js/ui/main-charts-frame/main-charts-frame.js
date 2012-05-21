@@ -25,7 +25,7 @@ groupspy.BaseChartsFrame = new jsage.Class('BaseChartsFrame', [jsage.GlobalMessa
 	
 })
 
-var frame = groupspy.BaseChartsFrame.create([groupspy.StatsSnapshotWidget, groupspy.MainChartsWidget, groupspy.DemogeoSnapshotWidget, groupspy.SnapshotLowerWidget])
+var frame = groupspy.BaseChartsFrame.create([groupspy.StatsSnapshotWidget, groupspy.MainChartsWidget, groupspy.SnapshotLowerWidget])
 	
 })
 })

@@ -1,4 +1,4 @@
-from group_spy.main_spy.models import GroupObservation, Group, Post, LatestDemogeoObservation, LatestPostObservation
+from group_spy.main_spy.models import GroupObservation, Group, Post, LatestDemogeoObservation, LatestPostObservation, DemoObservation
 from datetime import datetime, timedelta
 from django.db.models import Sum
 from django.db import DatabaseError
@@ -101,7 +101,11 @@ class GroupScanner(object):
         return {'total_users': total_users, 'banned_users': banned_users, 'faceless_users': faceless_users}
     
     def analyze_demogeo(self, gid, profiles, source_id, crawler):
-        demo_json = self.analyze_demo(profiles, crawler)
+        demo_json, agesex_json = self.analyze_demo(profiles, crawler)
+        for strata, value in agesex_json.iteritems():
+            key_pieces = strata.split(":")
+            d = DemoObservation.objects.create(value=value, source=source_id, age_group=key_pieces[0].split("-")[1], group_id=gid, is_man=key_pieces[1] == "man")
+        
         geo_json = self.analyze_geo(profiles, crawler)
         result = {'demo': demo_json, 'geo': geo_json}
         try:
@@ -191,8 +195,7 @@ class GroupScanner(object):
             if not final_strata in stratas:
                 stratas[final_strata] = 0
             stratas[final_strata] += 1
-        print agesex_only_stratas
-        return stratas        
+        return (stratas, agesex_only_stratas)        
         
     def write_observations(self, group, result):
         now = datetime.now()

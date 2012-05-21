@@ -1,4 +1,4 @@
-new Module('ui/main-charts-frame/demogeo-snapshot-widget.js', ['jsage/baseui.js'], function() {
+new Module('ui/main-charts-frame/demogeo-snapshot-widget.js', ['jsage/baseui.js', 'jsage/eventbus.js'], function() {
 $(document).ready(function () {
 	
 var time_now = Math.round(new Date().getTime() / 1000)
@@ -240,10 +240,15 @@ function create_pie_chart(chart_desc) {
 	chart_desc.chart = schart
 }	
 
-groupspy.DemogeoSnapshotWidget = new jsage.Class('DemogeoSnapshotWidget', [], {
+groupspy.DemogeoSnapshotWidget = new jsage.Class('DemogeoSnapshotWidget', [jsage.GlobalMessagingObject], {
 	
 	init: function() {
 		this.ajax_token = null
+		this.subscribe(groupspy.messages.demographics_frame_activate, this.on_activate)
+	},
+	
+	on_activate: function(gid) {
+		this.set_group(gid)
 	},
 	
 	set_group: function(gid) {
@@ -255,15 +260,15 @@ groupspy.DemogeoSnapshotWidget = new jsage.Class('DemogeoSnapshotWidget', [], {
 		if ('chart' in geo_chart_desc)
 			geo_chart_desc.chart.showLoading()
 		$.ajax({
-			url: '/group' + gid + '/latest_demogeo_snapshot/' + time_now + '/',
+			url: '/group' + gid + '/latest_demogeo_snapshot/',
 			success: function (data) {
 				if (that.ajax_token != token)
 					return
 				data = data.response			
-				arrays_to_percents(data.whole_group.geo, data.active_users.geo)
-				geo_chart_desc.initial_data = [data.whole_group.geo, data.active_users.geo]
+				arrays_to_percents(data.entire.geo, data.active.geo)
+				geo_chart_desc.initial_data = [data.entire.geo, data.active.geo]
 				
-				var demo_data = [data.whole_group.demo, data.active_users.demo]
+				var demo_data = [data.entire.demo, data.active.demo]
 				for (var i = 0, l = demo_descriptions.length; i < l; i++) {
 					demo_descriptions[i].initial_data = demo_data
 				}
@@ -273,6 +278,8 @@ groupspy.DemogeoSnapshotWidget = new jsage.Class('DemogeoSnapshotWidget', [], {
 	}
 	
 })
+
+var widget = groupspy.DemogeoSnapshotWidget.create()
 	
 })
 })

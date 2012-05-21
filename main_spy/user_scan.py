@@ -20,6 +20,7 @@ class UserScanner(object):
                 user.last_name = profile['last_name']
                 user.last_scanned = now
                 user.save()
+                print "saving %s" % profile['uid']
         except LogError:
             pass
             

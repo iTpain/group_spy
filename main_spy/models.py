@@ -90,14 +90,16 @@ class LatestDemogeoObservation(models.Model):
     json = models.TextField()
     group = models.ForeignKey(Group)
     #proper values are 'vk_viewers', 'entire', 'active'
-    source = models.CharField(max_length="16")
+    source = models.CharField(max_length=16)
     
 class DemoObservation(models.Model):
     date = models.DateTimeField(auto_now=True, auto_now_add=True, db_index=True)
     value = models.IntegerField()
     group = models.ForeignKey(Group)
     # the high value of age strata, e.g. for '15-18' the age group's value is 18
+    source = models.CharField(max_length=16)
     age_group = models.IntegerField()
+    is_man = models.BooleanField()
     
 class UserSocialAction(models.Model):
     post = models.ForeignKey(Post)
